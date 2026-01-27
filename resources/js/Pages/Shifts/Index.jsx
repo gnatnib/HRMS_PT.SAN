@@ -13,6 +13,9 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
         end_time: '17:00',
         break_duration: 60,
         late_tolerance: 15,
+        early_leave_tolerance: 15,
+        is_overnight: false,
+        notes: '',
     });
 
     const demoShifts = shifts.length > 0 ? shifts : [
@@ -37,6 +40,9 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
             end_time: shift.end_time?.substring(0, 5) || shift.end_time,
             break_duration: shift.break_duration,
             late_tolerance: shift.late_tolerance,
+            early_leave_tolerance: shift.early_leave_tolerance || 15,
+            is_overnight: shift.is_overnight || false,
+            notes: shift.notes || '',
         });
         setShowModal(true);
     };
@@ -88,6 +94,11 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
                 {flash?.success && (
                     <div className="p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
                         ✓ {flash.success}
+                    </div>
+                )}
+                {flash?.error && (
+                    <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+                        ✗ {flash.error}
                     </div>
                 )}
 
@@ -246,7 +257,7 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
                                     />
                                 </div>
                                 <div>
-                                    <label className="label">Toleransi (menit)</label>
+                                    <label className="label">Toleransi Terlambat (menit)</label>
                                     <input
                                         type="number"
                                         className="input"
@@ -254,6 +265,39 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
                                         onChange={e => setData('late_tolerance', parseInt(e.target.value))}
                                     />
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label">Toleransi Pulang Cepat (menit)</label>
+                                    <input
+                                        type="number"
+                                        className="input"
+                                        value={data.early_leave_tolerance}
+                                        onChange={e => setData('early_leave_tolerance', parseInt(e.target.value))}
+                                    />
+                                </div>
+                                <div></div>
+                            </div>
+                            <div>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                        checked={data.is_overnight}
+                                        onChange={e => setData('is_overnight', e.target.checked)}
+                                    />
+                                    <span className="text-sm text-gray-700">Shift melewati tengah malam (overnight)</span>
+                                </label>
+                            </div>
+                            <div>
+                                <label className="label">Catatan (opsional)</label>
+                                <textarea
+                                    className="input"
+                                    rows="3"
+                                    value={data.notes}
+                                    onChange={e => setData('notes', e.target.value)}
+                                    placeholder="Catatan tambahan untuk shift ini..."
+                                />
                             </div>
                             <div className="flex gap-3 pt-4">
                                 <button

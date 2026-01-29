@@ -18,13 +18,6 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
         notes: '',
     });
 
-    const demoShifts = shifts.length > 0 ? shifts : [
-        { id: 1, code: 'SHIFT-A', name: 'Shift Pagi', start_time: '08:00', end_time: '17:00', break_duration: 60, late_tolerance: 15, employees_count: 45 },
-        { id: 2, code: 'SHIFT-B', name: 'Shift Siang', start_time: '14:00', end_time: '22:00', break_duration: 60, late_tolerance: 15, employees_count: 38 },
-        { id: 3, code: 'SHIFT-C', name: 'Shift Malam', start_time: '22:00', end_time: '06:00', break_duration: 60, late_tolerance: 15, employees_count: 12 },
-        { id: 4, code: 'FLEX', name: 'Shift Fleksibel', start_time: '09:00', end_time: '18:00', break_duration: 60, late_tolerance: 30, employees_count: 25 },
-    ];
-
     const openCreate = () => {
         setEditingShift(null);
         reset();
@@ -117,47 +110,55 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
 
                 {/* Shift Cards */}
                 <div className="grid md:grid-cols-4 gap-4">
-                    {demoShifts.map((shift) => (
-                        <div key={shift.id} className="card relative">
-                            <div className="absolute top-2 right-2">
-                                <span className="px-2 py-1 text-xs font-mono bg-primary-100 text-primary-700 rounded">
-                                    {shift.code}
-                                </span>
-                            </div>
-                            <h3 className="font-semibold text-gray-900 mb-3">{shift.name}</h3>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Jam Kerja</span>
-                                    <span className="font-medium">{shift.start_time?.substring(0, 5) || shift.start_time} - {shift.end_time?.substring(0, 5) || shift.end_time}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Istirahat</span>
-                                    <span className="font-medium">{shift.break_duration} menit</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500">Toleransi</span>
-                                    <span className="font-medium">{shift.late_tolerance} menit</span>
-                                </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                                <span className="text-sm text-gray-500">{shift.employees_count || 0} karyawan</span>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => openEdit(shift)}
-                                        className="text-primary-600 hover:text-primary-700 text-sm"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(shift)}
-                                        className="text-red-600 hover:text-red-700 text-sm"
-                                    >
-                                        Hapus
-                                    </button>
-                                </div>
-                            </div>
+                    {shifts.length === 0 ? (
+                        <div className="col-span-4 card text-center py-12">
+                            <div className="text-6xl mb-4">📋</div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Belum ada shift</h3>
+                            <p className="text-gray-500 mb-4">Klik tombol "Tambah Shift" untuk membuat shift baru</p>
                         </div>
-                    ))}
+                    ) : (
+                        shifts.map((shift) => (
+                            <div key={shift.id} className="card relative">
+                                <div className="absolute top-2 right-2">
+                                    <span className="px-2 py-1 text-xs font-mono bg-primary-100 text-primary-700 rounded">
+                                        {shift.code}
+                                    </span>
+                                </div>
+                                <h3 className="font-semibold text-gray-900 mb-3">{shift.name}</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Jam Kerja</span>
+                                        <span className="font-medium">{shift.start_time?.substring(0, 5) || shift.start_time} - {shift.end_time?.substring(0, 5) || shift.end_time}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Istirahat</span>
+                                        <span className="font-medium">{shift.break_duration} menit</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Toleransi</span>
+                                        <span className="font-medium">{shift.late_tolerance} menit</span>
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                                    <span className="text-sm text-gray-500">{shift.employees_count || 0} karyawan</span>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEdit(shift)}
+                                            className="text-primary-600 hover:text-primary-700 text-sm"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(shift)}
+                                            className="text-red-600 hover:text-red-700 text-sm"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
 
                 {/* Roster Calendar */}

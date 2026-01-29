@@ -35,7 +35,7 @@ $configData = Helper::appClasses();
           </a>
         </div>
         <!-- /Logo -->
-        <h3 class="mb-1">{{ __('Welcome to') . " " . __(env('APP_NAME', 'HRMS')), }}! 👋</h3>
+        <h3 class="mb-1">{{ __('Welcome to') . " " . __(env('APP_NAME', 'HRMS')) }}! 👋</h3>
         <p class="mb-4">{{ __('Please sign-in to your account') }}</p>
 
         @if (session('status'))

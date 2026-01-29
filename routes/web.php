@@ -146,6 +146,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/candidates', [RecruitmentController::class, 'store'])->name('store');
         Route::post('/move', [RecruitmentController::class, 'moveStage'])->name('move');
         Route::get('/onboarding', [RecruitmentController::class, 'onboarding'])->name('onboarding');
+        Route::post('/onboarding/store', [RecruitmentController::class, 'storeOnboarding'])->name('onboarding.store');
         Route::post('/checklist', [RecruitmentController::class, 'updateChecklist'])->name('checklist');
     });
 

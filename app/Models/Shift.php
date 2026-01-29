@@ -18,8 +18,12 @@ class Shift extends Model
         'break_duration',
         'late_tolerance',
         'early_leave_tolerance',
+        'is_overnight',
         'is_active',
         'color',
+        'notes',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -28,6 +32,7 @@ class Shift extends Model
         'break_duration' => 'integer',
         'late_tolerance' => 'integer',
         'early_leave_tolerance' => 'integer',
+        'is_overnight' => 'boolean',
         'is_active' => 'boolean',
     ];
 

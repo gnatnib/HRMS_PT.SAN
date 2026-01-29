@@ -34,9 +34,14 @@ class ShiftController extends Controller
             'end_time' => 'required|date_format:H:i',
             'break_duration' => 'required|integer|min:0|max:120',
             'late_tolerance' => 'required|integer|min:0|max:60',
+            'early_leave_tolerance' => 'nullable|integer|min:0|max:60',
+            'is_overnight' => 'nullable|boolean',
+            'notes' => 'nullable|string|max:500',
+            'color' => 'nullable|string|max:20',
         ]);
 
         $validated['is_active'] = true;
+        $validated['created_by'] = $request->user()->name ?? null;
 
         $shift = Shift::create($validated);
 
@@ -52,7 +57,13 @@ class ShiftController extends Controller
             'end_time' => 'required|date_format:H:i',
             'break_duration' => 'required|integer|min:0|max:120',
             'late_tolerance' => 'required|integer|min:0|max:60',
+            'early_leave_tolerance' => 'nullable|integer|min:0|max:60',
+            'is_overnight' => 'nullable|boolean',
+            'notes' => 'nullable|string|max:500',
+            'color' => 'nullable|string|max:20',
         ]);
+
+        $validated['updated_by'] = $request->user()->name ?? null;
 
         $shift->update($validated);
 
@@ -72,10 +83,22 @@ class ShiftController extends Controller
         $validated = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
+            'notes' => 'nullable|string|max:255',
         ]);
+
+        // Check if employee already assigned to this shift on this date
+        $exists = $shift->employees()
+            ->wherePivot('employee_id', $validated['employee_id'])
+            ->wherePivot('date', $validated['date'])
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->with('error', 'Karyawan sudah di-assign ke shift ini pada tanggal tersebut!');
+        }
 
         $shift->employees()->attach($validated['employee_id'], [
             'date' => $validated['date'],
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         return redirect()->back()->with('success', 'Karyawan berhasil di-assign ke shift!');

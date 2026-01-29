@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
@@ -50,7 +50,7 @@ export default function PerformanceIndex({ auth }) {
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Performance Management" />
 
             <div className="space-y-6">
@@ -177,7 +177,7 @@ export default function PerformanceIndex({ auth }) {
                     </table>
                 </div>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }
 

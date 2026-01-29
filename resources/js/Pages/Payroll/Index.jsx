@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -67,7 +67,7 @@ export default function PayrollIndex({ auth, periods = [], stats = {}, trendData
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Payroll Management" />
 
             <div className="space-y-6">
@@ -247,7 +247,7 @@ export default function PayrollIndex({ auth, periods = [], stats = {}, trendData
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }
 

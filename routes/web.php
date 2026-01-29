@@ -13,6 +13,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\RecruitmentController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,7 +29,7 @@ Route::get('/login', fn() => Inertia::render('Auth/Login'))->name('login');
 Route::middleware(['auth'])->group(function () {
 
     // Dashboard
-    Route::get('/dashboard', fn() => Inertia::render('Dashboard'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // ========================================
     // MODULE 1: ATTENDANCE & TIME MANAGEMENT

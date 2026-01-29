@@ -1,5 +1,5 @@
 import { Head, useForm, router, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function EmployeesIndex({ auth, employees = {}, departments = [], stats = {}, filters = {}, flash }) {
@@ -63,7 +63,7 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Employees" />
 
             <div className="space-y-6">
@@ -294,7 +294,7 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }
 

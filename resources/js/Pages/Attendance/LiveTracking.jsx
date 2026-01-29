@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState, useEffect, useRef } from 'react';
 
 export default function LiveTracking({ auth, employees = [] }) {
@@ -15,7 +15,7 @@ export default function LiveTracking({ auth, employees = [] }) {
     ];
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Live Tracking" />
 
             <div className="space-y-6">
@@ -56,7 +56,7 @@ export default function LiveTracking({ auth, employees = [] }) {
                                     <div
                                         key={emp.id}
                                         className={`absolute w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-110 ${emp.status === 'active' ? 'bg-green-500' :
-                                                emp.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
+                                            emp.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
                                             }`}
                                         style={{
                                             top: `${20 + idx * 20}%`,
@@ -79,14 +79,14 @@ export default function LiveTracking({ auth, employees = [] }) {
                                 <div
                                     key={emp.id}
                                     className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedEmployee?.id === emp.id
-                                            ? 'border-primary-500 bg-primary-50'
-                                            : 'border-gray-200 hover:bg-gray-50'
+                                        ? 'border-primary-500 bg-primary-50'
+                                        : 'border-gray-200 hover:bg-gray-50'
                                         }`}
                                     onClick={() => setSelectedEmployee(emp)}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${emp.status === 'active' ? 'bg-green-500' :
-                                                emp.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
+                                            emp.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
                                             }`}>
                                             {emp.name.charAt(0)}
                                         </div>
@@ -109,7 +109,7 @@ export default function LiveTracking({ auth, employees = [] }) {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold ${selectedEmployee.status === 'active' ? 'bg-green-500' :
-                                        selectedEmployee.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
+                                    selectedEmployee.status === 'idle' ? 'bg-amber-500' : 'bg-gray-400'
                                     }`}>
                                     {selectedEmployee.name.charAt(0)}
                                 </div>
@@ -126,7 +126,7 @@ export default function LiveTracking({ auth, employees = [] }) {
                     </div>
                 )}
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }
 

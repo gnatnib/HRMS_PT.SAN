@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function AssetsIndex({ auth, assets = [], employees = [], stats = {}, flash }) {
@@ -101,7 +101,7 @@ export default function AssetsIndex({ auth, assets = [], employees = [], stats =
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Asset Management" />
 
             <div className="space-y-6">
@@ -291,7 +291,7 @@ export default function AssetsIndex({ auth, assets = [], employees = [], stats =
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }
 

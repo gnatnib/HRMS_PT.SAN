@@ -13,6 +13,7 @@ export default function MekariLayout({ children, user }) {
             name: 'Time Management',
             href: '#',
             dropdown: true,
+            active: url.startsWith('/attendance') || url.startsWith('/shifts') || url.startsWith('/overtime') || url.startsWith('/leave'),
             items: [
                 { name: 'Clock In/Out', href: '/attendance/clock' },
                 { name: 'Shifts', href: '/shifts' },
@@ -24,13 +25,35 @@ export default function MekariLayout({ children, user }) {
             name: 'Finance',
             href: '#',
             dropdown: true,
+            active: url.startsWith('/reimbursement') || url.startsWith('/loans') || url.startsWith('/payroll'),
             items: [
+                { name: 'Payroll', href: '/payroll' },
                 { name: 'Reimbursement', href: '/reimbursement' },
                 { name: 'Loans', href: '/loans' },
             ],
         },
-        { name: 'Payroll', href: '/payroll', active: url.startsWith('/payroll') },
-        { name: 'Company', href: '/documents', active: url === '/documents' },
+        {
+            name: 'Recruitment',
+            href: '#',
+            dropdown: true,
+            active: url.startsWith('/recruitment'),
+            items: [
+                { name: 'Candidates', href: '/recruitment' },
+                { name: 'Onboarding', href: '/recruitment/onboarding' },
+            ],
+        },
+        {
+            name: 'Company',
+            href: '#',
+            dropdown: true,
+            active: url.startsWith('/documents') || url.startsWith('/assets') || url.startsWith('/analytics') || url.startsWith('/performance'),
+            items: [
+                { name: 'Documents', href: '/documents' },
+                { name: 'Assets', href: '/assets' },
+                { name: 'Analytics', href: '/analytics' },
+                { name: 'Performance', href: '/performance' },
+            ],
+        },
     ];
 
     return (
@@ -255,7 +278,9 @@ export default function MekariLayout({ children, user }) {
 
             {/* Footer */}
             <footer className="py-4 mt-8 text-center text-gray-500 border-t border-gray-200 bg-gray-50">
-                <p className="text-sm">© 2020 Talenta.co - Advanced Payroll Automation & HR Solution</p>
+                <p className="text-sm">
+                    © {new Date().getFullYear()} PT. Sinergi Asta Nusantara - Human Resource Management System
+                </p>
             </footer>
         </div>
     );

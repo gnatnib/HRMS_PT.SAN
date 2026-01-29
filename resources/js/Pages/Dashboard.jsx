@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 import {
@@ -41,15 +41,10 @@ export default function Dashboard({
                         {/* Shortcut Buttons */}
                         <div className="flex flex-wrap gap-3 mt-4">
                             <p className="mr-2 text-sm font-medium text-gray-700">Shortcut</p>
-                            <button className="shortcut-btn">Request attendance</button>
-                            <button className="shortcut-btn">Request reimbursement</button>
-                            <button className="shortcut-btn">Request time off</button>
-                            <button className="shortcut-btn flex items-center gap-1">
-                                More request
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
+                            <Link href="/attendance/clock" className="shortcut-btn">Request attendance</Link>
+                            <Link href="/reimbursement" className="shortcut-btn">Request reimbursement</Link>
+                            <Link href="/leave" className="shortcut-btn">Request time off</Link>
+                            <Link href="/overtime" className="shortcut-btn">Request overtime</Link>
                         </div>
                     </div>
                 </div>
@@ -69,49 +64,66 @@ export default function Dashboard({
                         <div className="widget-card">
                             <h3 className="mb-3 text-sm font-semibold text-gray-900">Quick Links</h3>
                             <nav className="space-y-2">
-                                <a href="#" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                <Link href="/employees" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     My Info
-                                </a>
-                                <a href="/employees/create" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                </Link>
+                                <Link href="/employees/create" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                     </svg>
                                     Add Employee
-                                </a>
-                                <a href="#" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                </Link>
+                                <Link href="/employees" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                     </svg>
-                                    Employee Transfer
-                                </a>
-                                <a href="/documents" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                    Employee List
+                                </Link>
+                                <Link href="/documents" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
-                                    Company Settings
-                                </a>
+                                    Documents
+                                </Link>
+                                <Link href="/assets" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                    </svg>
+                                    Assets
+                                </Link>
                             </nav>
                         </div>
 
                         <div className="widget-card">
                             <h3 className="mb-3 text-sm font-semibold text-gray-900">Applications</h3>
                             <nav className="space-y-2">
-                                <a href="/performance" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                <Link href="/performance" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                     </svg>
                                     Performance Review
-                                </a>
-                                <a href="/recruitment" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                </Link>
+                                <Link href="/recruitment" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                     Recruitment
-                                </a>
+                                </Link>
+                                <Link href="/analytics" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                                    </svg>
+                                    Analytics
+                                </Link>
+                                <Link href="/tasks" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                    </svg>
+                                    Tasks
+                                </Link>
                             </nav>
                         </div>
                     </div>

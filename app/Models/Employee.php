@@ -21,6 +21,8 @@ class Employee extends Model
     protected $fillable = [
         'id',
         'contract_id',
+        'employee_code',
+        'barcode',
         'first_name',
         'father_name',
         'last_name',
@@ -28,16 +30,36 @@ class Employee extends Model
         'birth_and_place',
         'national_number',
         'mobile_number',
+        'email',
         'degree',
         'gender',
         'address',
         'notes',
+        'join_date',
         'balance_leave_allowed',
         'max_leave_allowed',
         'delay_counter',
         'hourly_counter',
         'is_active',
         'profile_photo_path',
+        // Payroll fields
+        'basic_salary',
+        'ptkp_status',
+        'tax_configuration',
+        'prorate_type',
+        'count_holiday_as_working_day',
+        'salary_type',
+        'salary_configuration',
+        'overtime_status',
+        'employee_tax_status',
+        'jht_configuration',
+        'bpjs_kesehatan_config',
+        'jaminan_pensiun_config',
+        'npp_bpjs_ketenagakerjaan',
+        // Bank info
+        'bank_name',
+        'bank_account_number',
+        'bank_account_holder',
     ];
 
     // 👉 Links
@@ -99,22 +121,22 @@ class Employee extends Model
     // 👉 Attributes
     protected function hourlyCounter(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => $value !== null ? Carbon::parse($value)->format('H:i') : '');
+        return Attribute::make(get: fn(?string $value) => $value !== null ? Carbon::parse($value)->format('H:i') : '');
     }
 
     protected function delayCounter(): Attribute
     {
-        return Attribute::make(get: fn (?string $value) => $value !== null ? Carbon::parse($value)->format('H:i') : '');
+        return Attribute::make(get: fn(?string $value) => $value !== null ? Carbon::parse($value)->format('H:i') : '');
     }
 
     public function getFullNameAttribute()
     {
-        return $this->first_name.' '.$this->father_name.' '.$this->last_name;
+        return $this->first_name . ' ' . $this->father_name . ' ' . $this->last_name;
     }
 
     public function getShortNameAttribute()
     {
-        return $this->first_name.' '.$this->last_name;
+        return $this->first_name . ' ' . $this->last_name;
     }
 
     // 👉 Scopes
@@ -127,14 +149,7 @@ class Employee extends Model
         $start_at,
         $end_at
     ): void {
-        $query->whereHas('leaves', function ($query) use (
-            $employee_id,
-            $leave_id,
-            $from_date,
-            $to_date,
-            $start_at,
-            $end_at
-        ) {
+        $query->whereHas('leaves', function ($query) use ($employee_id, $leave_id, $from_date, $to_date, $start_at, $end_at) {
             $query
                 ->where('employee_id', $employee_id)
                 ->where('leave_id', $leave_id)
@@ -166,7 +181,7 @@ class Employee extends Model
                 ->first();
         }
 
-        if (! $startDateRow) {
+        if (!$startDateRow) {
             $startDateRow = Timeline::where('employee_id', $this->id)
                 ->latest()
                 ->first();
@@ -222,7 +237,7 @@ class Employee extends Model
     {
         $data = Timeline::where('employee_id', $this->id)->first();
         if ($data) {
-            return __('Joined').' '.Carbon::parse($data->start_date)->diffForHumans();
+            return __('Joined') . ' ' . Carbon::parse($data->start_date)->diffForHumans();
         } else {
             return '---';
         }
@@ -244,9 +259,9 @@ class Employee extends Model
         $user = User::where('employee_id', $this->id)->first();
 
         if ($user) {
-            return 'storage/'.$user->profile_photo_path;
+            return 'storage/' . $user->profile_photo_path;
         }
 
-        return 'storage/'.$defaultPhotoName;
+        return 'storage/' . $defaultPhotoName;
     }
 }

@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState, useEffect } from 'react';
 
 export default function ClockIn({ auth, employee = null, todayAttendance = null, flash }) {
@@ -83,7 +83,7 @@ export default function ClockIn({ auth, employee = null, todayAttendance = null,
     const hasCheckedOut = todayAttendance?.check_out;
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Clock In / Out" />
 
             <div className="max-w-xl mx-auto text-center py-8">
@@ -168,8 +168,8 @@ export default function ClockIn({ auth, employee = null, todayAttendance = null,
                                 onClick={handleClockIn}
                                 disabled={!location || processing}
                                 className={`flex-1 py-4 px-6 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 transition-all ${location && !processing
-                                        ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
-                                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                                     }`}
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,6 +201,6 @@ export default function ClockIn({ auth, employee = null, todayAttendance = null,
                     <p>Pastikan GPS aktif dan izinkan akses lokasi</p>
                 </div>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }

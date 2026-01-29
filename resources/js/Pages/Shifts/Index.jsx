@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }) {
@@ -86,7 +86,7 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Shift Management" />
 
             <div className="space-y-6">
@@ -319,6 +319,6 @@ export default function ShiftsIndex({ auth, shifts = [], employees = [], flash }
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }

@@ -1,5 +1,5 @@
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function OvertimeIndex({ auth, requests = [], stats = {}, flash }) {
@@ -64,7 +64,7 @@ export default function OvertimeIndex({ auth, requests = [], stats = {}, flash }
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Overtime Management" />
 
             <div className="space-y-6">
@@ -125,8 +125,8 @@ export default function OvertimeIndex({ auth, requests = [], stats = {}, flash }
                             key={f}
                             onClick={() => setFilter(f)}
                             className={`px-4 py-2 text-sm rounded-lg transition-colors ${filter === f
-                                    ? 'bg-primary-600 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-primary-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {f === 'all' ? 'Semua' : f.charAt(0).toUpperCase() + f.slice(1)}
@@ -270,7 +270,7 @@ export default function OvertimeIndex({ auth, requests = [], stats = {}, flash }
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }
 

@@ -175,8 +175,18 @@ class EmployeeController extends Controller
         // Get latest timeline for current assignment
         $employee->timeline = $employee->timelines->first();
 
+        // Get dropdown data for Employment Data section
+        $departments = Department::select('id', 'name')->get();
+        $positions = Position::select('id', 'name')->get();
+        $contracts = Contract::select('id', 'name')->get();
+        $centers = Center::select('id', 'name')->get();
+
         return Inertia::render('Employees/Show', [
             'employee' => $employee,
+            'departments' => $departments,
+            'positions' => $positions,
+            'contracts' => $contracts,
+            'centers' => $centers,
         ]);
     }
 

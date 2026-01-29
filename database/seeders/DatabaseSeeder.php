@@ -14,29 +14,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Use existing working seeders
         $this->call([
-            ContractsSeeder::class,
-            EmployeesSeeder::class,
-
-            AdminUserSeeder::class,
-
+            ContractsSeeder::class,    // Creates contracts first
+            EmployeesSeeder::class,    // Creates employees (needs contracts)
             CenterSeeder::class,
             DepartmentSeeder::class,
             PositionSeeder::class,
             TimelineSeeder::class,
+            AdminUserSeeder::class,    // Creates admin user linked to first employee
         ]);
 
-        if (file_exists('database/seeders/SettingsSeeder.php')) {
-            $this->call([
-                SettingsSeeder::class,
-            ]);
-        }
-
-        // Create role
-        $adminRole = Role::create(['name' => 'Admin']);
+        // Create role (if not exists)
+        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
 
         // Assign role
         $admin = User::find(1);
-        $admin->assignRole($adminRole);
+        if ($admin) {
+            $admin->assignRole($adminRole);
+        }
     }
 }

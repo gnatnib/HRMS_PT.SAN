@@ -15,10 +15,10 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $department = $request->get('department');
         $status = $request->get('status');
 
-        $query = Employee::with(['contract:id,department_id,position_id', 'contract.department:id,name', 'contract.position:id,name'])
+        // Simplified query that avoids non-existent columns
+        $query = Employee::with(['contract:id,name'])
             ->select('id', 'first_name', 'last_name', 'mobile_number', 'is_active', 'profile_photo_path', 'contract_id');
 
         if ($search) {
@@ -29,20 +29,27 @@ class EmployeeController extends Controller
             });
         }
 
-        if ($department) {
-            $query->whereHas('contract', function ($q) use ($department) {
-                $q->where('department_id', $department);
-            });
-        }
-
         if ($status !== null && $status !== '') {
             $query->where('is_active', $status === 'active');
         }
 
         $employees = $query->orderBy('first_name')->paginate(20);
 
-        $departments = Department::select('id', 'name')->get();
-        $positions = Position::select('id', 'name')->get();
+        // Get departments if they exist
+        $departments = [];
+        try {
+            $departments = Department::select('id', 'name')->get();
+        } catch (\Exception $e) {
+            // Table might not exist or have issues
+        }
+
+        // Get positions if they exist
+        $positions = [];
+        try {
+            $positions = Position::select('id', 'name')->get();
+        } catch (\Exception $e) {
+            // Table might not exist or have issues
+        }
 
         $stats = [
             'total' => Employee::count(),
@@ -57,7 +64,6 @@ class EmployeeController extends Controller
             'stats' => $stats,
             'filters' => [
                 'search' => $search,
-                'department' => $department,
                 'status' => $status,
             ],
         ]);

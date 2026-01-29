@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function PayslipView({ auth, payslip = null }) {
@@ -38,7 +38,7 @@ export default function PayslipView({ auth, payslip = null }) {
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Slip Gaji" />
 
             <div className="max-w-3xl mx-auto space-y-6">
@@ -161,7 +161,7 @@ export default function PayslipView({ auth, payslip = null }) {
                     🔒 Dokumen ini bersifat RAHASIA. Hanya untuk karyawan yang bersangkutan.
                 </p>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }
 

@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function OnboardingIndex({ auth }) {
@@ -59,7 +59,7 @@ export default function OnboardingIndex({ auth }) {
     ];
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Onboarding / Offboarding" />
 
             <div className="space-y-6">
@@ -208,6 +208,6 @@ export default function OnboardingIndex({ auth }) {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }

@@ -75,3 +75,68 @@
         background-color: rgba(255, 255, 255, 0.2);
     }
 }
+
+/* Mekari Talenta Navigation Styles */
+@layer components {
+    .nav-link {
+        @apply flex items-center gap-1 px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-900;
+    }
+
+    .nav-link-active {
+        @apply text-red-600 border-b-2 border-red-600;
+    }
+
+    /* Stats Card Styles */
+    .stats-card {
+        @apply p-5 bg-white border border-gray-200 rounded-xl shadow-sm;
+    }
+
+    .stats-card-title {
+        @apply flex items-center justify-between mb-4 text-base font-semibold text-gray-900;
+    }
+
+    /* Progress bar for stats */
+    .progress-bar {
+        @apply h-2 overflow-hidden bg-gray-100 rounded-full;
+    }
+
+    .progress-bar-fill {
+        @apply h-full transition-all duration-300;
+    }
+
+    /* Tab styles */
+    .tab-list {
+        @apply flex gap-6 border-b border-gray-200;
+    }
+
+    .tab-item {
+        @apply px-1 py-3 text-sm font-medium text-gray-500 border-b-2 border-transparent cursor-pointer hover:text-gray-700 hover:border-gray-300;
+    }
+
+    .tab-item-active {
+        @apply text-gray-900 border-red-500;
+    }
+
+    /* Widget card */
+    .widget-card {
+        @apply p-4 bg-white border border-gray-200 rounded-xl;
+    }
+
+    /* Shortcut button */
+    .shortcut-btn {
+        @apply px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors;
+    }
+
+    /* Data table */
+    .data-table {
+        @apply w-full text-sm text-left;
+    }
+
+    .data-table th {
+        @apply px-4 py-3 text-xs font-medium tracking-wider text-gray-500 uppercase bg-gray-50;
+    }
+
+    .data-table td {
+        @apply px-4 py-3 text-gray-700 border-t border-gray-100;
+    }
+}

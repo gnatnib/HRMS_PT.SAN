@@ -1,5 +1,5 @@
 import { Head, useForm, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, positions = [], flash }) {
@@ -98,7 +98,7 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Recruitment - ATS" />
 
             <div className="space-y-6">
@@ -261,6 +261,6 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
                     </div>
                 </div>
             )}
-        </Layout>
+        </MekariLayout>
     );
 }

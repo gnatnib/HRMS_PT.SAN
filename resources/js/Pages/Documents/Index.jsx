@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
 export default function DocumentsIndex({ auth, documents = [] }) {
@@ -29,7 +29,7 @@ export default function DocumentsIndex({ auth, documents = [] }) {
     ];
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="Document Management" />
 
             <div className="space-y-6">
@@ -66,8 +66,8 @@ export default function DocumentsIndex({ auth, documents = [] }) {
                                             key={cat}
                                             onClick={() => setSelectedCategory(cat)}
                                             className={`px-3 py-1 text-xs rounded-full transition-colors ${selectedCategory === cat
-                                                    ? 'bg-primary-600 text-white'
-                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                ? 'bg-primary-600 text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                                 }`}
                                         >
                                             {cat === 'all' ? 'Semua' : docTypes[cat]?.label}
@@ -121,7 +121,7 @@ export default function DocumentsIndex({ auth, documents = [] }) {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }
 

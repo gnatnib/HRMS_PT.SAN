@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MekariLayout from '@/Layouts/MekariLayout';
 import {
     AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -65,7 +65,7 @@ export default function AnalyticsDashboard({ auth }) {
     ];
 
     return (
-        <Layout user={auth?.user}>
+        <MekariLayout user={auth?.user}>
             <Head title="HR Analytics" />
 
             <div className="space-y-6">
@@ -239,7 +239,7 @@ export default function AnalyticsDashboard({ auth }) {
                     <p className="text-xs text-gray-500 mt-2 text-center">* Desember termasuk THR</p>
                 </div>
             </div>
-        </Layout>
+        </MekariLayout>
     );
 }
 

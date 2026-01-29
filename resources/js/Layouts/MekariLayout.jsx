@@ -47,10 +47,11 @@ export default function MekariLayout({ children, user }) {
             name: 'Company',
             href: '#',
             dropdown: true,
-            active: url.startsWith('/documents') || url.startsWith('/assets') || url.startsWith('/analytics') || url.startsWith('/performance'),
+            active: url.startsWith('/documents') || url.startsWith('/assets') || url.startsWith('/analytics') || url.startsWith('/performance') || url.startsWith('/company'),
             items: [
                 { name: 'Documents', href: '/documents' },
                 { name: 'Assets', href: '/assets' },
+                { name: 'Announcements', href: '/company/announcements' },
                 { name: 'Analytics', href: '/analytics' },
                 { name: 'Performance', href: '/performance' },
             ],

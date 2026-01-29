@@ -15,6 +15,7 @@ use App\Http\Controllers\AssetController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\RecruitmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AnnouncementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -153,6 +154,18 @@ Route::middleware(['auth'])->group(function () {
     // ========================================
     Route::get('/analytics', fn() => Inertia::render('Analytics/Index'))->name('analytics.index');
     Route::get('/performance', fn() => Inertia::render('Performance/Index'))->name('performance.index');
+
+    // ========================================
+    // MODULE 6: COMPANY SETTINGS
+    // ========================================
+    Route::prefix('company')->name('company.')->group(function () {
+        // Announcements
+        Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+        Route::post('/announcements/{announcement}/toggle', [AnnouncementController::class, 'toggle'])->name('announcements.toggle');
+    });
 });
 
 // Fortify Auth Routes (handled by Fortify)

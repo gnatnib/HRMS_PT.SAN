@@ -13,26 +13,35 @@ class Loan extends Model
 
     protected $fillable = [
         'employee_id',
+        'reference_number',
         'principal_amount',
-        'monthly_installment',
-        'total_installments',
-        'paid_installments',
-        'remaining_amount',
+        'interest_rate',
+        'installment_months',
+        'monthly_deduction',
+        'start_date',
+        'end_date',
         'purpose',
+        'loan_type',
+        'interest_type',
         'status',
         'approved_by',
         'approved_at',
-        'start_deduction_date',
+        'total_paid',
+        'remaining_balance',
+        'installments_paid',
     ];
 
     protected $casts = [
         'principal_amount' => 'decimal:2',
-        'monthly_installment' => 'decimal:2',
-        'remaining_amount' => 'decimal:2',
-        'total_installments' => 'integer',
-        'paid_installments' => 'integer',
+        'monthly_deduction' => 'decimal:2',
+        'remaining_balance' => 'decimal:2',
+        'total_paid' => 'decimal:2',
+        'interest_rate' => 'decimal:2',
+        'installment_months' => 'integer',
+        'installments_paid' => 'integer',
         'approved_at' => 'datetime',
-        'start_deduction_date' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function employee(): BelongsTo
@@ -52,8 +61,8 @@ class Loan extends Model
 
     public function calculateInstallment(): float
     {
-        if ($this->total_installments > 0) {
-            return $this->principal_amount / $this->total_installments;
+        if ($this->installment_months > 0) {
+            return $this->principal_amount / $this->installment_months;
         }
         return 0;
     }

@@ -2,36 +2,64 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BankTransferExport;
+use App\Models\Employee;
 use App\Models\PayrollPeriod;
 use App\Models\Payslip;
-use App\Models\Employee;
-use App\Models\SalaryComponent;
-use App\Models\EmployeeSalary;
+use App\Services\Payroll\PayrollService;
+use App\Services\Payroll\PayslipPdfService;
+use App\Services\Payroll\ThrService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
+/**
+ * PayrollController
+ *
+ * Controller untuk mengelola payroll, slip gaji, dan THR.
+ * Menggunakan PayrollService untuk kalkulasi yang mematuhi regulasi Indonesia.
+ */
 class PayrollController extends Controller
 {
+    protected PayrollService $payrollService;
+    protected ThrService $thrService;
+    protected PayslipPdfService $pdfService;
+
+    public function __construct(
+        PayrollService $payrollService,
+        ThrService $thrService,
+        PayslipPdfService $pdfService
+    ) {
+        $this->payrollService = $payrollService;
+        $this->thrService = $thrService;
+        $this->pdfService = $pdfService;
+    }
+
+    /**
+     * Menampilkan daftar periode payroll.
+     */
     public function index()
     {
         $periods = PayrollPeriod::withCount('payslips')
-            ->orderByDesc('period_start')
+            ->orderByDesc('start_date')
             ->get()
             ->map(function ($period) {
                 return [
                     'id' => $period->id,
-                    'name' => Carbon::parse($period->period_start)->format('F Y'),
+                    'name' => Carbon::parse($period->start_date)->translatedFormat('F Y'),
                     'status' => $period->status,
                     'employees' => $period->payslips_count,
                     'totalGross' => $period->total_gross,
                     'totalNet' => $period->total_net,
+                    'totalBpjs' => $period->total_bpjs,
+                    'totalPph21' => $period->total_pph21,
                     'paymentDate' => $period->payment_date?->format('Y-m-d'),
                 ];
             });
 
         $currentPeriod = PayrollPeriod::where('status', 'paid')
-            ->orderByDesc('period_start')
+            ->orderByDesc('start_date')
             ->first();
 
         $stats = [
@@ -41,14 +69,14 @@ class PayrollController extends Controller
             'employees' => Employee::where('is_active', true)->count(),
         ];
 
-        // Trend data for chart
+        // Trend data untuk chart (6 bulan terakhir)
         $trendData = PayrollPeriod::where('status', 'paid')
-            ->orderBy('period_start')
+            ->orderBy('start_date')
             ->limit(6)
             ->get()
             ->map(function ($p) {
                 return [
-                    'month' => Carbon::parse($p->period_start)->format('M'),
+                    'month' => Carbon::parse($p->start_date)->format('M'),
                     'gross' => round($p->total_gross / 1000000, 0),
                     'net' => round($p->total_net / 1000000, 0),
                 ];
@@ -61,6 +89,10 @@ class PayrollController extends Controller
         ]);
     }
 
+    /**
+     * Menjalankan proses payroll untuk periode tertentu.
+     * Menggunakan PayrollService untuk kalkulasi yang akurat.
+     */
     public function run(Request $request)
     {
         $validated = $request->validate([
@@ -71,89 +103,72 @@ class PayrollController extends Controller
         $periodStart = Carbon::create($validated['period_year'], $validated['period_month'], 1);
         $periodEnd = $periodStart->copy()->endOfMonth();
 
-        // Check if period already exists
-        $existing = PayrollPeriod::where('period_start', $periodStart)->first();
+        // Cek apakah periode sudah ada
+        $existing = PayrollPeriod::where('start_date', $periodStart)->first();
         if ($existing) {
             return redirect()->back()->withErrors(['error' => 'Periode ini sudah diproses!']);
         }
 
-        // Create payroll period
+        // Buat periode payroll baru
         $period = PayrollPeriod::create([
-            'period_start' => $periodStart,
-            'period_end' => $periodEnd,
+            'name' => $periodStart->translatedFormat('F Y'),
+            'start_date' => $periodStart,
+            'end_date' => $periodEnd,
             'status' => 'draft',
             'total_gross' => 0,
             'total_net' => 0,
             'total_bpjs' => 0,
             'total_pph21' => 0,
+            'created_by' => auth()->user()?->name,
         ]);
 
-        // Get all active employees and create payslips
-        $employees = Employee::where('is_active', true)->with('contract')->get();
+        try {
+            // Proses payroll menggunakan service
+            $result = $this->payrollService->processPayroll($period);
 
-        $totalGross = 0;
-        $totalNet = 0;
-        $totalBpjs = 0;
-        $totalPph21 = 0;
+            $message = "Payroll berhasil diproses untuk {$result['success_count']} karyawan!";
+            if ($result['failed_count'] > 0) {
+                $message .= " ({$result['failed_count']} gagal)";
+            }
 
-        foreach ($employees as $employee) {
-            // Simplified salary calculation
-            $basicSalary = 8000000; // Default basic salary
-            $allowances = 1500000; // Fixed allowances
-            $overtime = 0; // TODO: Calculate from overtime requests
-
-            $grossSalary = $basicSalary + $allowances + $overtime;
-
-            // BPJS calculations (simplified)
-            $bpjsKesehatan = $grossSalary * 0.01; // 1% employee
-            $bpjsJht = $grossSalary * 0.02; // 2% employee
-            $bpjsJp = $grossSalary * 0.01; // 1% employee
-            $totalBpjsEmployee = $bpjsKesehatan + $bpjsJht + $bpjsJp;
-
-            // PPh 21 (simplified - 5% for income under 60jt)
-            $pph21 = ($grossSalary - $totalBpjsEmployee) * 0.05;
-
-            $netSalary = $grossSalary - $totalBpjsEmployee - $pph21;
-
-            Payslip::create([
-                'payroll_period_id' => $period->id,
-                'employee_id' => $employee->id,
-                'basic_salary' => $basicSalary,
-                'total_allowances' => $allowances,
-                'total_overtime' => $overtime,
-                'gross_salary' => $grossSalary,
-                'total_bpjs' => $totalBpjsEmployee,
-                'total_pph21' => $pph21,
-                'total_deductions' => $totalBpjsEmployee + $pph21,
-                'net_salary' => $netSalary,
-            ]);
-
-            $totalGross += $grossSalary;
-            $totalNet += $netSalary;
-            $totalBpjs += $totalBpjsEmployee;
-            $totalPph21 += $pph21;
+            return redirect()->back()->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Gagal memproses payroll: ' . $e->getMessage()]);
         }
-
-        $period->update([
-            'total_gross' => $totalGross,
-            'total_net' => $totalNet,
-            'total_bpjs' => $totalBpjs,
-            'total_pph21' => $totalPph21,
-        ]);
-
-        return redirect()->back()->with('success', 'Payroll berhasil diproses untuk ' . $employees->count() . ' karyawan!');
     }
 
+    /**
+     * Generate payroll menggunakan PayrollService (alias untuk run).
+     */
+    public function generate(Request $request)
+    {
+        return $this->run($request);
+    }
+
+    /**
+     * Finalisasi periode payroll (status: paid).
+     */
     public function finalize(PayrollPeriod $period)
     {
         $period->update([
             'status' => 'paid',
             'payment_date' => now(),
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
         ]);
+
+        // Proses pembayaran kasbon untuk semua payslip di periode ini
+        $payslips = Payslip::where('payroll_period_id', $period->id)->get();
+        foreach ($payslips as $payslip) {
+            // TODO: Process loan payments if needed
+        }
 
         return redirect()->back()->with('success', 'Payroll berhasil difinalisasi!');
     }
 
+    /**
+     * Menampilkan slip gaji karyawan.
+     */
     public function payslip(Request $request, $employeeId = null)
     {
         $employee = $employeeId
@@ -177,28 +192,35 @@ class PayrollController extends Controller
         }
 
         $payslipData = [
+            'id' => $latestPayslip->id,
             'employee' => [
-                'name' => $employee->first_name . ' ' . $employee->last_name,
+                'name' => $employee->full_name,
                 'nik' => $employee->id,
-                'position' => $employee->contract?->position?->name ?? '-',
-                'department' => $employee->contract?->department?->name ?? '-',
-                'bank' => 'BCA',
-                'accountNo' => '1234567890',
+                'position' => $employee->current_position,
+                'department' => $employee->current_department,
+                'bank' => $latestPayslip->bank_name ?? 'BCA',
+                'accountNo' => $latestPayslip->bank_account ?? '-',
             ],
-            'period' => Carbon::parse($latestPayslip->period->period_start)->format('F Y'),
-            'paymentDate' => $latestPayslip->period->payment_date?->format('d F Y'),
+            'period' => Carbon::parse($latestPayslip->period->start_date)->translatedFormat('F Y'),
+            'paymentDate' => $latestPayslip->period->payment_date?->translatedFormat('d F Y'),
             'earnings' => [
                 ['name' => 'Gaji Pokok', 'amount' => $latestPayslip->basic_salary],
-                ['name' => 'Tunjangan', 'amount' => $latestPayslip->total_allowances],
-                ['name' => 'Lembur', 'amount' => $latestPayslip->total_overtime],
+                ['name' => 'Tunjangan Harian', 'amount' => $latestPayslip->daily_allowance_total ?? 0],
+                ['name' => 'Lembur', 'amount' => $latestPayslip->overtime_pay],
+                ['name' => 'Reimbursement', 'amount' => $latestPayslip->reimbursement_total ?? 0],
             ],
             'deductions' => [
-                ['name' => 'BPJS', 'amount' => $latestPayslip->total_bpjs],
-                ['name' => 'PPh 21', 'amount' => $latestPayslip->total_pph21],
+                ['name' => 'BPJS Kesehatan', 'amount' => $latestPayslip->bpjs_kes_employee ?? $latestPayslip->bpjs_kesehatan],
+                ['name' => 'BPJS JHT', 'amount' => $latestPayslip->bpjs_tk_jht_employee ?? $latestPayslip->bpjs_jht],
+                ['name' => 'BPJS JP', 'amount' => $latestPayslip->bpjs_tk_jp_employee ?? $latestPayslip->bpjs_jp],
+                ['name' => 'PPh 21', 'amount' => $latestPayslip->pph21],
+                ['name' => 'Cicilan Kasbon', 'amount' => $latestPayslip->loan_deduction],
             ],
-            'totalEarnings' => $latestPayslip->gross_salary,
+            'totalEarnings' => $latestPayslip->total_earnings,
             'totalDeductions' => $latestPayslip->total_deductions,
             'netSalary' => $latestPayslip->net_salary,
+            'pph21Category' => $latestPayslip->pph21_ter_category,
+            'attendanceDays' => $latestPayslip->attendance_days_count,
         ];
 
         return Inertia::render('Payroll/Payslip', [
@@ -206,6 +228,36 @@ class PayrollController extends Controller
         ]);
     }
 
+    /**
+     * Download slip gaji dalam format PDF.
+     * PDF dienkripsi dengan password = tanggal lahir karyawan (DDMMYYYY).
+     */
+    public function downloadSlip($payslipId)
+    {
+        $payslip = Payslip::with(['employee', 'period'])->findOrFail($payslipId);
+
+        // Verifikasi akses: hanya pemilik atau admin yang bisa download
+        $user = auth()->user();
+        if ($user->employee_id !== $payslip->employee_id && !$user->hasRole('admin')) {
+            abort(403, 'Anda tidak memiliki akses ke slip gaji ini.');
+        }
+
+        return $this->pdfService->download($payslip);
+    }
+
+    /**
+     * Stream slip gaji PDF ke browser (preview).
+     */
+    public function previewSlip($payslipId)
+    {
+        $payslip = Payslip::with(['employee', 'period'])->findOrFail($payslipId);
+
+        return $this->pdfService->stream($payslip);
+    }
+
+    /**
+     * Export data payroll ke CSV (format lama).
+     */
     public function exportCsv(PayrollPeriod $period)
     {
         $payslips = Payslip::with('employee')
@@ -213,30 +265,103 @@ class PayrollController extends Controller
             ->get();
 
         $csvData = [];
-        $csvData[] = ['No', 'Nama Karyawan', 'Gaji Pokok', 'Tunjangan', 'Lembur', 'Gross', 'BPJS', 'PPh21', 'Net', 'Bank', 'No Rek'];
+        $csvData[] = ['No', 'Nama Karyawan', 'Gaji Pokok', 'Tunjangan Harian', 'Lembur', 'Gross', 'BPJS', 'PPh21', 'Net', 'Bank', 'No Rek'];
 
         $no = 1;
         foreach ($payslips as $slip) {
             $csvData[] = [
                 $no++,
-                $slip->employee->first_name . ' ' . $slip->employee->last_name,
+                $slip->employee->full_name,
                 $slip->basic_salary,
-                $slip->total_allowances,
-                $slip->total_overtime,
-                $slip->gross_salary,
-                $slip->total_bpjs,
-                $slip->total_pph21,
+                $slip->daily_allowance_total ?? 0,
+                $slip->overtime_pay,
+                $slip->total_earnings,
+                $slip->bpjs_kes_employee + $slip->bpjs_tk_jht_employee + $slip->bpjs_tk_jp_employee,
+                $slip->pph21,
                 $slip->net_salary,
-                'BCA',
-                '1234567890',
+                $slip->bank_name ?? 'BCA',
+                $slip->bank_account ?? '-',
             ];
         }
 
-        $filename = 'payroll_' . Carbon::parse($period->period_start)->format('Y-m') . '.csv';
+        $filename = 'payroll_' . Carbon::parse($period->start_date)->format('Y-m') . '.csv';
         $handle = fopen('php://temp', 'w');
         foreach ($csvData as $row) {
             fputcsv($handle, $row);
         }
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csv)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    /**
+     * Export data transfer bank dalam format yang kompatibel dengan KlikBCA.
+     */
+    public function exportBankTransfer(PayrollPeriod $period, Request $request)
+    {
+        $bankFormat = $request->get('bank', 'BCA');
+        $export = new BankTransferExport($period, $bankFormat);
+
+        return Excel::download($export, $export->getFileName());
+    }
+
+    /**
+     * Menampilkan halaman THR.
+     */
+    public function thrIndex()
+    {
+        $thrData = $this->thrService->processThr();
+
+        return Inertia::render('Payroll/Thr', [
+            'thrData' => $thrData,
+        ]);
+    }
+
+    /**
+     * Generate THR untuk karyawan tertentu atau semua karyawan aktif.
+     */
+    public function generateThr(Request $request)
+    {
+        $employeeIds = $request->input('employee_ids'); // null = semua karyawan
+        $calculationDate = $request->input('calculation_date')
+            ? Carbon::parse($request->input('calculation_date'))
+            : null;
+
+        $result = $this->thrService->processThr($employeeIds, $calculationDate);
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
+            'message' => "THR berhasil dihitung untuk {$result['summary']['eligible_employees']} karyawan.",
+        ]);
+    }
+
+    /**
+     * Export data THR ke Excel.
+     */
+    public function exportThr(Request $request)
+    {
+        $thrResult = $this->thrService->processThr();
+        $exportData = $this->thrService->formatForExport($thrResult);
+
+        // Gunakan simple CSV export
+        $filename = 'thr_' . now()->format('Y-m-d') . '.csv';
+        $handle = fopen('php://temp', 'w');
+
+        // Header
+        if (count($exportData) > 0) {
+            fputcsv($handle, array_keys($exportData[0]));
+        }
+
+        // Data
+        foreach ($exportData as $row) {
+            fputcsv($handle, $row);
+        }
+
         rewind($handle);
         $csv = stream_get_contents($handle);
         fclose($handle);

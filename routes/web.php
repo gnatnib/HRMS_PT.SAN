@@ -8,6 +8,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\CashAdvanceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AssetController;
@@ -66,6 +67,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{period}/finalize', [PayrollController::class, 'finalize'])->name('finalize');
         Route::get('/payslip/{employee?}', [PayrollController::class, 'payslip'])->name('payslip');
         Route::get('/{period}/export', [PayrollController::class, 'exportCsv'])->name('export');
+
+        // New: Bank Transfer Export (KlikBCA format)
+        Route::get('/{period}/bank-transfer', [PayrollController::class, 'exportBankTransfer'])->name('bank-transfer');
+
+        // New: PDF Payslip download
+        Route::get('/slip/{payslip}/download', [PayrollController::class, 'downloadSlip'])->name('slip.download');
+        Route::get('/slip/{payslip}/preview', [PayrollController::class, 'previewSlip'])->name('slip.preview');
+
+        // New: THR Management
+        Route::get('/thr', [PayrollController::class, 'thrIndex'])->name('thr.index');
+        Route::post('/thr/generate', [PayrollController::class, 'generateThr'])->name('thr.generate');
+        Route::get('/thr/export', [PayrollController::class, 'exportThr'])->name('thr.export');
     });
 
     // Reimbursement
@@ -78,6 +91,32 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/loans/{loan}/approve', [LoanController::class, 'approve'])->name('loans.approve');
     Route::post('/loans/{loan}/reject', [LoanController::class, 'reject'])->name('loans.reject');
     Route::post('/loans/{loan}/payment', [LoanController::class, 'recordPayment'])->name('loans.payment');
+
+    // ========================================
+    // FINANCE MODULE (Submenu Finance)
+    // ========================================
+    Route::prefix('finance')->name('finance.')->group(function () {
+        // Reimbursement Settings (Jenis Reimbursement)
+        Route::get('/reimbursement', [ReimbursementController::class, 'settings'])->name('reimbursement.index');
+        Route::post('/reimbursement/types', [ReimbursementController::class, 'storeType'])->name('reimbursement.store');
+        Route::put('/reimbursement/types/{type}', [ReimbursementController::class, 'updateType'])->name('reimbursement.update');
+        Route::delete('/reimbursement/types/{type}', [ReimbursementController::class, 'destroyType'])->name('reimbursement.destroy');
+        Route::get('/reimbursement/export', [ReimbursementController::class, 'exportTypes'])->name('reimbursement.export');
+
+        // Cash Advance
+        Route::get('/cash-advance', [CashAdvanceController::class, 'index'])->name('cash-advance.index');
+        Route::post('/cash-advance', [CashAdvanceController::class, 'store'])->name('cash-advance.store');
+        Route::post('/cash-advance/{cashAdvance}/approve', [CashAdvanceController::class, 'approve'])->name('cash-advance.approve');
+        Route::post('/cash-advance/{cashAdvance}/reject', [CashAdvanceController::class, 'reject'])->name('cash-advance.reject');
+        Route::post('/cash-advance/{cashAdvance}/settle', [CashAdvanceController::class, 'settle'])->name('cash-advance.settle');
+        Route::get('/cash-advance/export', [CashAdvanceController::class, 'export'])->name('cash-advance.export');
+        Route::get('/cash-advance/settings', [CashAdvanceController::class, 'settings'])->name('cash-advance.settings');
+        Route::post('/cash-advance/policies', [CashAdvanceController::class, 'storePolicy'])->name('cash-advance.policy.store');
+
+        // Loan Detail
+        Route::get('/loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+        Route::get('/loans/{loan}/export-schedule', [LoanController::class, 'exportSchedule'])->name('loans.export-schedule');
+    });
 
     // ========================================
     // MODULE 3: HR ADMINISTRATION

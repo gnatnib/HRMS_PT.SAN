@@ -25,10 +25,11 @@ export default function MekariLayout({ children, user }) {
             name: 'Finance',
             href: '#',
             dropdown: true,
-            active: url.startsWith('/reimbursement') || url.startsWith('/loans') || url.startsWith('/payroll'),
+            active: url.startsWith('/finance') || url.startsWith('/reimbursement') || url.startsWith('/loans') || url.startsWith('/payroll'),
             items: [
                 { name: 'Payroll', href: '/payroll' },
-                { name: 'Reimbursement', href: '/reimbursement' },
+                { name: 'Reimbursement', href: '/finance/reimbursement' },
+                { name: 'Cash Advance', href: '/finance/cash-advance' },
                 { name: 'Loans', href: '/loans' },
             ],
         },

@@ -2,54 +2,28 @@ import { Head, useForm, router, Link } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
-export default function EmployeesIndex({ auth, employees = {}, departments = [], stats = {}, filters = {}, flash }) {
-    const [showModal, setShowModal] = useState(false);
+export default function EmployeesIndex({ auth, employees = {}, departments = [], centers = [], stats = {}, filters = {}, flash }) {
     const [search, setSearch] = useState(filters.search || '');
-    const [selectedDept, setSelectedDept] = useState(filters.department || '');
+    const [status, setStatus] = useState(filters.status || '');
+    const [branch, setBranch] = useState(filters.branch || '');
+    const [showing, setShowing] = useState(10);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        first_name: '',
-        last_name: '',
-        mobile_number: '',
-        national_number: '',
-        gender: 'male',
-        address: '',
-        contract_id: '',
-        max_leave_allowed: 12,
-    });
-
-    const demoEmployees = employees.data || [
-        { id: 1, first_name: 'Ahmad', last_name: 'Fauzi', mobile_number: '081234567890', contract: { department: { name: 'IT' }, position: { name: 'Software Engineer' } }, is_active: true },
-        { id: 2, first_name: 'Siti', last_name: 'Rahayu', mobile_number: '081234567891', contract: { department: { name: 'HR' }, position: { name: 'HR Manager' } }, is_active: true },
-        { id: 3, first_name: 'Budi', last_name: 'Santoso', mobile_number: '081234567892', contract: { department: { name: 'Sales' }, position: { name: 'Sales Lead' } }, is_active: false },
-    ];
-
-    const demoDepartments = departments.length > 0 ? departments : [
-        { id: 1, name: 'IT' },
-        { id: 2, name: 'HR' },
-        { id: 3, name: 'Sales' },
-        { id: 4, name: 'Finance' },
-    ];
+    const employeeList = employees.data || [];
 
     const demoStats = {
-        total: stats.total || 156,
-        active: stats.active || 148,
-        inactive: stats.inactive || 8,
+        total: stats.total || 0,
+        active: stats.active || 0,
+        inactive: stats.inactive || 0,
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get('/employees', { search, department: selectedDept }, { preserveState: true });
+    const handleSearch = () => {
+        router.get('/employees', { search, status, branch }, { preserveState: true });
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        post('/employees', {
-            onSuccess: () => {
-                setShowModal(false);
-                reset();
-            },
-        });
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
     };
 
     const handleDelete = (emp) => {
@@ -62,6 +36,16 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
         window.location.href = '/employees-export';
     };
 
+    // Quick action buttons configuration
+    const quickActions = [
+        { icon: '➕', label: 'ADD EMPLOYEE', href: '/employees/create' },
+        { icon: '📋', label: 'BULK ADD\nEMPLOYEE', href: '#' },
+        { icon: '📝', label: 'UPDATE EMPLOYEE\nDATA', href: '#' },
+        { icon: '📥', label: 'IMPORT CUSTOM\nFIELD DATA', href: '#' },
+        { icon: '🔄', label: 'EMPLOYEE\nTRANSFER HISTORY', href: '#' },
+        { icon: '📊', label: 'IMPORT & EXPORT\nPRORATE', href: '#' },
+    ];
+
     return (
         <MekariLayout user={auth?.user}>
             <Head title="Employees" />
@@ -73,247 +57,260 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                     </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Karyawan</h1>
-                        <p className="text-sm text-gray-500">Database karyawan perusahaan</p>
+                {/* Mekari-style Header Banner */}
+                <div className="relative bg-gradient-to-r from-gray-700 to-gray-900 rounded-lg overflow-hidden">
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute right-10 top-1/2 -translate-y-1/2 w-48 h-48 bg-white/10 rounded-full"></div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={handleExport} className="btn-secondary flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Export CSV
-                        </button>
-                        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Tambah Karyawan
-                        </button>
+                    <div className="relative p-8">
+                        <h1 className="text-3xl font-light text-white mb-1">Employees</h1>
+                        <p className="text-gray-300 text-sm">PT. SINERGI ASTA NUSANTARA</p>
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid md:grid-cols-3 gap-4">
-                    <StatCard icon="👥" title="Total Karyawan" value={demoStats.total} />
-                    <StatCard icon="✅" title="Aktif" value={demoStats.active} color="green" />
-                    <StatCard icon="⏸️" title="Tidak Aktif" value={demoStats.inactive} color="red" />
-                </div>
-
-                {/* Search & Filter */}
-                <form onSubmit={handleSearch} className="card">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                className="input"
-                                placeholder="Cari nama atau nomor HP..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                            />
-                        </div>
-                        <div className="w-48">
-                            <select
-                                className="input"
-                                value={selectedDept}
-                                onChange={e => setSelectedDept(e.target.value)}
+                {/* Quick Action Buttons */}
+                <div className="widget-card">
+                    <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+                        {quickActions.map((action, idx) => (
+                            <Link
+                                key={idx}
+                                href={action.href}
+                                className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors group"
                             >
-                                <option value="">Semua Departemen</option>
-                                {demoDepartments.map((dept) => (
-                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                <span className="text-2xl mb-2">{action.icon}</span>
+                                <span className="text-xs text-center text-gray-600 group-hover:text-red-600 whitespace-pre-line">
+                                    {action.label}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+
+                    {/* Filters Row */}
+                    <div className="flex flex-wrap gap-4 mt-6 pt-6 border-t">
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Status</label>
+                            <select
+                                value={status}
+                                onChange={(e) => {
+                                    setStatus(e.target.value);
+                                    router.get('/employees', { search, status: e.target.value, branch }, { preserveState: true });
+                                }}
+                                className="form-input min-w-[150px]"
+                            >
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Select Branch</label>
+                            <select
+                                value={branch}
+                                onChange={(e) => {
+                                    setBranch(e.target.value);
+                                    router.get('/employees', { search, status, branch: e.target.value }, { preserveState: true });
+                                }}
+                                className="form-input min-w-[180px]"
+                            >
+                                <option value="">All Branch</option>
+                                {centers.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
                         </div>
-                        <button type="submit" className="btn-primary">
-                            Cari
+                    </div>
+                </div>
+
+                {/* Table Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap gap-2">
+                        <button onClick={handleExport} className="btn-secondary flex items-center gap-2 text-sm">
+                            <span>🔍</span> EXPORT EMPLOYEE LIST
+                        </button>
+                        <button className="btn-secondary flex items-center gap-2 text-sm">
+                            <span>➕</span> EMPLOYEE TRANSFER
+                        </button>
+                        <button className="btn-secondary flex items-center gap-2 text-sm">
+                            <span>🗑️</span> DELETE
+                        </button>
+                        <button className="btn-secondary flex items-center gap-2 text-sm">
+                            <span>📊</span> COLUMN SEARCH
                         </button>
                     </div>
-                </form>
-
-                {/* Employee Table */}
-                <div className="card p-0 overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Karyawan</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Departemen</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jabatan</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. HP</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {demoEmployees.map((emp) => (
-                                <tr key={emp.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
-                                                {emp.first_name?.[0]}{emp.last_name?.[0]}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">{emp.first_name} {emp.last_name}</p>
-                                                <p className="text-xs text-gray-500">ID: {emp.id}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{emp.contract?.department?.name || '-'}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{emp.contract?.position?.name || '-'}</td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">{emp.mobile_number || '-'}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${emp.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                            }`}>
-                                            {emp.is_active ? 'Aktif' : 'Tidak Aktif'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex gap-2 justify-end">
-                                            <Link
-                                                href={`/employees/${emp.id}`}
-                                                className="text-primary-600 hover:text-primary-700 text-sm"
-                                            >
-                                                Detail
-                                            </Link>
-                                            <Link
-                                                href={`/employees/${emp.id}/edit`}
-                                                className="text-amber-600 hover:text-amber-700 text-sm"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(emp)}
-                                                className="text-red-600 hover:text-red-700 text-sm"
-                                            >
-                                                Hapus
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-xl font-bold text-gray-900 mb-4">Tambah Karyawan Baru</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="label">Nama Depan</label>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={data.first_name}
-                                        onChange={e => setData('first_name', e.target.value)}
-                                    />
-                                    {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
-                                </div>
-                                <div>
-                                    <label className="label">Nama Belakang</label>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={data.last_name}
-                                        onChange={e => setData('last_name', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="label">No. HP</label>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={data.mobile_number}
-                                        onChange={e => setData('mobile_number', e.target.value)}
-                                        placeholder="08xx..."
-                                    />
-                                </div>
-                                <div>
-                                    <label className="label">NIK</label>
-                                    <input
-                                        type="text"
-                                        className="input"
-                                        value={data.national_number}
-                                        onChange={e => setData('national_number', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="label">Jenis Kelamin</label>
-                                <select
-                                    className="input"
-                                    value={data.gender}
-                                    onChange={e => setData('gender', e.target.value)}
-                                >
-                                    <option value="male">Laki-laki</option>
-                                    <option value="female">Perempuan</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="label">Alamat</label>
-                                <textarea
-                                    className="input min-h-[60px]"
-                                    value={data.address}
-                                    onChange={e => setData('address', e.target.value)}
-                                />
-                            </div>
-                            <div>
-                                <label className="label">Jatah Cuti Tahunan</label>
-                                <input
-                                    type="number"
-                                    className="input"
-                                    value={data.max_leave_allowed}
-                                    onChange={e => setData('max_leave_allowed', parseInt(e.target.value))}
-                                    min="0"
-                                    max="30"
-                                />
-                            </div>
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="btn-secondary flex-1"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn-primary flex-1"
-                                    disabled={processing}
-                                >
-                                    {processing ? 'Menyimpan...' : 'Simpan'}
-                                </button>
-                            </div>
-                        </form>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">Showing</span>
+                            <select
+                                value={showing}
+                                onChange={(e) => setShowing(e.target.value)}
+                                className="form-input w-16 text-sm"
+                            >
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm text-gray-500 mr-2">Search</label>
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                className="form-input w-48"
+                                placeholder="Search..."
+                            />
+                        </div>
                     </div>
                 </div>
-            )}
-        </MekariLayout>
-    );
-}
 
-function StatCard({ icon, title, value, color = 'gray' }) {
-    const colors = {
-        gray: 'bg-gray-100 text-gray-600',
-        green: 'bg-green-100 text-green-600',
-        red: 'bg-red-100 text-red-600',
-    };
+                {/* Employee Table */}
+                <div className="widget-card overflow-hidden p-0">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-gray-800 text-white">
+                                    <th className="px-4 py-3 text-left">
+                                        <input type="checkbox" className="rounded" />
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Photo</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Full Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Employee ID</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Barcode</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Organization</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Job Position</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Job Level</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {employeeList.length > 0 ? (
+                                    employeeList.map((emp) => (
+                                        <tr key={emp.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3">
+                                                <input type="checkbox" className="rounded" />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-red-500 text-xs">👤</span>
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                                                        {emp.profile_photo_path ? (
+                                                            <img
+                                                                src={`/storage/${emp.profile_photo_path}`}
+                                                                alt={emp.first_name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm font-bold text-gray-400">
+                                                                {emp.first_name?.charAt(0)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <Link
+                                                    href={`/employees/${emp.id}`}
+                                                    className="text-red-600 hover:text-red-800 font-medium"
+                                                >
+                                                    {emp.first_name} {emp.last_name || ''}
+                                                </Link>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.employee_code || `EMP-${String(emp.id).padStart(4, '0')}`}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.barcode || `AII${emp.id}`}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.contract?.department?.name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.contract?.position?.name || emp.contract?.name || 'Staff'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.contract?.name || 'Staff'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Link
+                                                        href={`/employees/${emp.id}`}
+                                                        className="text-blue-600 hover:text-blue-800"
+                                                        title="View"
+                                                    >
+                                                        👁️
+                                                    </Link>
+                                                    <Link
+                                                        href={`/employees/${emp.id}/edit`}
+                                                        className="text-yellow-600 hover:text-yellow-800"
+                                                        title="Edit"
+                                                    >
+                                                        ✏️
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(emp)}
+                                                        className="text-red-600 hover:text-red-800"
+                                                        title="Delete"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="9" className="px-4 py-8 text-center text-gray-500">
+                                            No employees found. <Link href="/employees/create" className="text-red-600 hover:underline">Add one now</Link>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
 
-    return (
-        <div className="card flex items-center gap-4">
-            <span className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${colors[color]}`}>
-                {icon}
-            </span>
-            <div>
-                <p className="text-sm text-gray-500">{title}</p>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
+                    {/* Pagination */}
+                    {employees.links && (
+                        <div className="flex items-center justify-between px-4 py-3 border-t">
+                            <p className="text-sm text-gray-500">
+                                Showing {employees.from || 0} to {employees.to || 0} of {employees.total || 0} entries
+                            </p>
+                            <div className="flex gap-1">
+                                {employees.links?.map((link, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => link.url && router.get(link.url)}
+                                        disabled={!link.url}
+                                        className={`px-3 py-1 text-sm rounded ${link.active
+                                                ? 'bg-red-600 text-white'
+                                                : link.url
+                                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                    : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid md:grid-cols-3 gap-4">
+                    <div className="widget-card text-center">
+                        <p className="text-3xl font-bold text-gray-900">{demoStats.total}</p>
+                        <p className="text-sm text-gray-500">Total Employees</p>
+                    </div>
+                    <div className="widget-card text-center">
+                        <p className="text-3xl font-bold text-green-600">{demoStats.active}</p>
+                        <p className="text-sm text-gray-500">Active</p>
+                    </div>
+                    <div className="widget-card text-center">
+                        <p className="text-3xl font-bold text-red-600">{demoStats.inactive}</p>
+                        <p className="text-sm text-gray-500">Inactive</p>
+                    </div>
+                </div>
             </div>
-        </div>
+        </MekariLayout>
     );
 }

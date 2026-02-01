@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { Head, router } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
-import { useState, useEffect } from 'react';
-=======
-import { Head } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
-import { useState } from 'react';
->>>>>>> abec81aef39fa2e94522185c5e68599c9b719ac2
+import { useState, useEffect } from 'react';
 
 export default function OnboardingIndex({ auth, newHires: initialNewHires = [], offboardings: initialOffboardings = [] }) {
     const [newHires, setNewHires] = useState(initialNewHires);
@@ -317,7 +311,6 @@ export default function OnboardingIndex({ auth, newHires: initialNewHires = [], 
                     </div>
                 </div>
             </div>
-<<<<<<< HEAD
 
             {/* Modal for New Onboarding/Offboarding */}
             {showModal && (
@@ -425,9 +418,6 @@ export default function OnboardingIndex({ auth, newHires: initialNewHires = [], 
                     </div>
                 </div>
             )}
-        </Layout>
-=======
         </MekariLayout>
->>>>>>> abec81aef39fa2e94522185c5e68599c9b719ac2
     );
 }

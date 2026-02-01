@@ -28,6 +28,8 @@ class Employee extends Model
         'last_name',
         'mother_name',
         'birth_and_place',
+        'birth_place',
+        'birth_date',
         'national_number',
         'mobile_number',
         'email',
@@ -42,6 +44,12 @@ class Employee extends Model
         'hourly_counter',
         'is_active',
         'profile_photo_path',
+        // Identity fields
+        'identity_type',
+        'identity_number',
+        'identity_expired_date',
+        'is_permanent_identity',
+        'postal_code',
         // Payroll fields
         'basic_salary',
         'ptkp_status',
@@ -60,6 +68,19 @@ class Employee extends Model
         'bank_name',
         'bank_account_number',
         'bank_account_holder',
+        // JSON arrays
+        'family_members',
+        'emergency_contacts',
+        'education',
+    ];
+
+    protected $casts = [
+        'family_members' => 'array',
+        'emergency_contacts' => 'array',
+        'education' => 'array',
+        'is_permanent_identity' => 'boolean',
+        'birth_date' => 'date',
+        'identity_expired_date' => 'date',
     ];
 
     // 👉 Links

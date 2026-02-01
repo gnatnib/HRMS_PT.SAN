@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
@@ -14,14 +13,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Use existing working seeders
+        // Seeds in order of dependency
         $this->call([
-            ContractsSeeder::class,    // Creates contracts first
-            EmployeesSeeder::class,    // Creates employees (needs contracts)
-            CenterSeeder::class,
-            DepartmentSeeder::class,
-            PositionSeeder::class,
-            TimelineSeeder::class,
+            DivisionPositionBranchSeeder::class, // Creates divisions (centers), positions, branches (departments), job levels (contracts)
+            ContractsSeeder::class,    // Creates contracts first (may be redundant, but kept for backward compatibility)
+            EmployeesSeeder::class,    // Creates sample employees (needs contracts)
+            TimelineSeeder::class,     // Creates timeline entries
             AdminUserSeeder::class,    // Creates admin user linked to first employee
         ]);
 

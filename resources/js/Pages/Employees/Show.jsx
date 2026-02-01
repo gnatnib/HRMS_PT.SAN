@@ -16,24 +16,206 @@ export default function EmployeeShow({
     const [activeSubTab, setActiveSubTab] = useState('employment');
     const [isEditing, setIsEditing] = useState(false);
 
-    // Form for editing employment data
-    const { data, setData, put, processing, errors } = useForm({
-        organization_id: employee.timeline?.department?.id || '',
-        position_id: employee.timeline?.position?.id || '',
+    // Form for editing employee data - includes ALL fields
+    const { data, setData, post, processing, errors } = useForm({
+        _method: 'PUT',
+        // Employment Data
+        employee_code: employee.employee_code || '',
+        barcode: employee.barcode || '',
+        organization_id: employee.organization_id || employee.timeline?.department?.id || '',
+        position_id: employee.position_id || employee.timeline?.position?.id || '',
+        employment_status: employee.employment_status || 'Permanent',
+        department_id: employee.department_id || '',
+        join_date: employee.join_date || '',
         contract_id: employee.contract_id || '',
         center_id: employee.timeline?.center?.id || '',
-        join_date: employee.join_date || '',
-        // Personal data
-        employee_code: employee.employee_code || '',
+
+        // Personal Data
         first_name: employee.first_name || '',
         last_name: employee.last_name || '',
         email: employee.email || '',
+        mobile_number: employee.mobile_number || '',
+        gender: employee.gender == 1 ? 'male' : 'female',
         identity_type: employee.identity_type || 'KTP',
-        identity_number: employee.national_number || '',
+        identity_number: employee.identity_number || employee.national_number || '',
         identity_expired_date: employee.identity_expired_date || '',
         is_permanent_identity: employee.is_permanent_identity || false,
+        birth_place: employee.birth_place || '',
+        birth_date: employee.birth_date || '',
         postal_code: employee.postal_code || '',
+        address: employee.address || '',
+        is_active: employee.is_active ?? true,
+
+        // Payroll Info
+        basic_salary: employee.basic_salary || 0,
+        ptkp_status: employee.ptkp_status || 'TK/0',
+        tax_configuration: employee.tax_configuration || 'Gross',
+        prorate_type: employee.prorate_type || 'Based on Working Day',
+        count_national_holiday: employee.count_national_holiday || false,
+        salary_type: employee.salary_type || 'Monthly',
+        salary_configuration: employee.salary_configuration || 'Taxable',
+        taxable_date: employee.taxable_date || '',
+        overtime_status: employee.overtime_status || 'Eligible',
+        employee_tax_status: employee.employee_tax_status || 'Pegawai Tetap',
+        jht_configuration: employee.jht_configuration || 'Default',
+        bpjs_kesehatan_config: employee.bpjs_kesehatan_config || 'By Company',
+        jaminan_pensiun_config: employee.jaminan_pensiun_config || 'Default',
+        npp_bpjs_ketenagakerjaan: employee.npp_bpjs_ketenagakerjaan || 'Default',
+        bpjs_ketenagakerjaan: employee.bpjs_ketenagakerjaan || '',
+        bpjs_kesehatan: employee.bpjs_kesehatan || '',
+        bpjs_kesehatan_family: employee.bpjs_kesehatan_family || '0',
+        npwp: employee.npwp || '',
+        currency: employee.currency || 'IDR',
+        beginning_netto: employee.beginning_netto || 0,
+        pph21_paid: employee.pph21_paid || 0,
+        bpjs_ketenagakerjaan_date: employee.bpjs_ketenagakerjaan_date || '',
+        bpjs_kesehatan_date: employee.bpjs_kesehatan_date || '',
+        jaminan_pensiun_date: employee.jaminan_pensiun_date || '',
+        payroll_components: employee.payroll_components || [],
+
+        // Bank Info
+        bank_name: employee.bank_name || '',
+        bank_account_number: employee.bank_account_number || '',
+        bank_account_holder: employee.bank_account_holder || '',
+
+        // Others
+        max_leave_allowed: employee.max_leave_allowed || 12,
+        profile_photo: null,
     });
+
+    // Options arrays
+    const employmentStatuses = ['Permanent', 'Contract', 'Probation', 'Intern'];
+    const ptkpOptions = ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3'];
+    const taxConfigs = ['Gross', 'Gross Up', 'Nett'];
+    const salaryTypes = ['Monthly', 'Hourly', 'Daily'];
+    const prorateTypes = ['Based on Working Day', 'Based on Calendar Day', 'Custom on Working Day', 'Custom on Calendar Day'];
+    const bpjsFamilyOptions = ['0', '1', '2', '3', '4', '5'];
+    const currencyOptions = ['IDR', 'USD', 'SGD'];
+
+    // Relationship options
+    const relationshipOptions = ['Father', 'Mother', 'Spouse', 'Child', 'Sibling', 'Brother', 'Sister', 'Other'];
+    const educationLevels = ['SD', 'SMP', 'SMA/SMK', 'D1', 'D2', 'D3', 'S1/D4', 'S2', 'S3'];
+
+    // Editable state for Family, Emergency, Education when editing (must be declared before handleSave uses them)
+    const [editableFamilyMembers, setEditableFamilyMembers] = useState(employee.family_members || []);
+    const [editableEmergencyContacts, setEditableEmergencyContacts] = useState(employee.emergency_contacts || []);
+    const [editableEducation, setEditableEducation] = useState(employee.education || []);
+
+    // Handle save
+    const handleSave = () => {
+        // Merge form data with editable arrays and submit directly using router.post
+        const submitData = {
+            ...data,
+            family_members: editableFamilyMembers,
+            emergency_contacts: editableEmergencyContacts,
+            education: editableEducation,
+            training_courses: editableTrainingCourses,
+            work_experience: editableWorkExperience,
+        };
+
+        router.post(`/employees/${employee.id}`, submitData, {
+            preserveScroll: true,
+            onSuccess: () => setIsEditing(false),
+        });
+    };
+
+    // Family Members CRUD
+    const addFamilyMember = () => {
+        setEditableFamilyMembers([...editableFamilyMembers, {
+            full_name: '',
+            relationship: 'Father',
+            birth_date: '',
+            id_number: '',
+            gender: 'male',
+            job: ''
+        }]);
+    };
+    const updateFamilyMember = (index, field, value) => {
+        const updated = [...editableFamilyMembers];
+        updated[index][field] = value;
+        setEditableFamilyMembers(updated);
+    };
+    const removeFamilyMember = (index) => {
+        setEditableFamilyMembers(editableFamilyMembers.filter((_, i) => i !== index));
+    };
+
+    // Emergency Contacts CRUD
+    const addEmergencyContact = () => {
+        setEditableEmergencyContacts([...editableEmergencyContacts, {
+            name: '',
+            relationship: 'Father',
+            phone: ''
+        }]);
+    };
+    const updateEmergencyContact = (index, field, value) => {
+        const updated = [...editableEmergencyContacts];
+        updated[index][field] = value;
+        setEditableEmergencyContacts(updated);
+    };
+    const removeEmergencyContact = (index) => {
+        setEditableEmergencyContacts(editableEmergencyContacts.filter((_, i) => i !== index));
+    };
+
+    // Education CRUD
+    const addEducation = () => {
+        setEditableEducation([...editableEducation, {
+            grade: 'D4/S1',
+            institution: '',
+            major: '',
+            start_year: '',
+            end_year: '',
+            gpa: ''
+        }]);
+    };
+    const updateEducation = (index, field, value) => {
+        const updated = [...editableEducation];
+        updated[index][field] = value;
+        setEditableEducation(updated);
+    };
+    const removeEducation = (index) => {
+        setEditableEducation(editableEducation.filter((_, i) => i !== index));
+    };
+
+    // Training & Courses state and CRUD
+    const [editableTrainingCourses, setEditableTrainingCourses] = useState(employee.training_courses || []);
+    const addTrainingCourse = () => {
+        setEditableTrainingCourses([...editableTrainingCourses, {
+            name: '',
+            held_by: '',
+            start_date: '',
+            end_date: '',
+            duration: '',
+            fee: '',
+            certificate: false
+        }]);
+    };
+    const updateTrainingCourse = (index, field, value) => {
+        const updated = [...editableTrainingCourses];
+        updated[index][field] = value;
+        setEditableTrainingCourses(updated);
+    };
+    const removeTrainingCourse = (index) => {
+        setEditableTrainingCourses(editableTrainingCourses.filter((_, i) => i !== index));
+    };
+
+    // Working Experience state and CRUD
+    const [editableWorkExperience, setEditableWorkExperience] = useState(employee.work_experience || []);
+    const addWorkExperience = () => {
+        setEditableWorkExperience([...editableWorkExperience, {
+            company: '',
+            position: '',
+            from: '',
+            to: ''
+        }]);
+    };
+    const updateWorkExperience = (index, field, value) => {
+        const updated = [...editableWorkExperience];
+        updated[index][field] = value;
+        setEditableWorkExperience(updated);
+    };
+    const removeWorkExperience = (index) => {
+        setEditableWorkExperience(editableWorkExperience.filter((_, i) => i !== index));
+    };
 
     // Tabs configuration
     const mainTabs = [
@@ -208,10 +390,10 @@ export default function EmployeeShow({
                     </p>
                 </div>
 
-                {/* Organization Name - Dropdown */}
+                {/* Division - Dropdown */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                        Organization Name<span className="text-red-500">*</span>
+                        Division<span className="text-red-500">*</span>
                     </label>
                     <select
                         value={data.organization_id}
@@ -268,14 +450,14 @@ export default function EmployeeShow({
                         Employment Status<span className="text-red-500">*</span>
                     </label>
                     <select
-                        value={data.contract_id}
-                        onChange={(e) => setData('contract_id', e.target.value)}
+                        value={data.employment_status}
+                        onChange={(e) => setData('employment_status', e.target.value)}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
                         <option value="">Select Status</option>
-                        {contracts.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
+                        {employmentStatuses.map((status) => (
+                            <option key={status} value={status}>{status}</option>
                         ))}
                     </select>
                 </div>
@@ -323,107 +505,92 @@ export default function EmployeeShow({
                     </p>
                 </div>
             </div>
-
-            {/* Edit/Save Buttons */}
-            <div className="flex justify-end gap-3 pt-4">
-                {isEditing ? (
-                    <>
-                        <button
-                            onClick={() => setIsEditing(false)}
-                            className="btn-secondary"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => {
-                                // Handle save
-                                setIsEditing(false);
-                            }}
-                            className="btn-primary"
-                        >
-                            Save Changes
-                        </button>
-                    </>
-                ) : (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="btn-primary"
-                    >
-                        Edit Employment Data
-                    </button>
-                )}
-            </div>
         </div>
     );
 
     const renderPersonalData = () => (
         <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-                {/* Employee ID */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                        Employee ID<span className="text-red-500">*</span>
-                    </label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.employee_code || `EMP-${String(employee.id).padStart(4, '0')}`}
-                    </p>
-                </div>
-
                 {/* First Name */}
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">First Name</label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.first_name || '-'}
-                    </p>
+                    <label className="block text-xs text-gray-500 mb-1">First Name<span className="text-red-500">*</span></label>
+                    {isEditing ? (
+                        <input type="text" value={data.first_name} onChange={(e) => setData('first_name', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Enter first name" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.first_name || '-'}</p>
+                    )}
                 </div>
 
                 {/* Last Name */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">Last Name</label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.last_name || '-'}
-                    </p>
+                    {isEditing ? (
+                        <input type="text" value={data.last_name} onChange={(e) => setData('last_name', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Enter last name" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.last_name || '-'}</p>
+                    )}
                 </div>
 
                 {/* Email */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">Email</label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.email || '-'}
-                    </p>
+                    {isEditing ? (
+                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="employee@company.com" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.email || '-'}</p>
+                    )}
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Phone Number</label>
+                    {isEditing ? (
+                        <input type="tel" value={data.mobile_number} onChange={(e) => setData('mobile_number', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="08xxxxxxxxxx" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.mobile_number || '-'}</p>
+                    )}
+                </div>
+
+                {/* Gender */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Gender<span className="text-red-500">*</span></label>
+                    {isEditing ? (
+                        <select value={data.gender} onChange={(e) => setData('gender', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.gender == 1 ? 'Male' : 'Female'}</p>
+                    )}
                 </div>
 
                 {/* Identity Type */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">Identity Type</label>
                     {isEditing ? (
-                        <select
-                            value={data.identity_type}
-                            onChange={(e) => setData('identity_type', e.target.value)}
-                            className="form-input w-full"
-                        >
+                        <select value={data.identity_type} onChange={(e) => setData('identity_type', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2">
                             {identityTypes.map((type) => (
                                 <option key={type} value={type}>{type}</option>
                             ))}
                         </select>
                     ) : (
-                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                            {employee.identity_type || 'KTP'}
-                        </p>
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.identity_type || 'KTP'}</p>
                     )}
                 </div>
 
-                {/* No Identity */}
+                {/* Identity Number */}
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">No Identity</label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.national_number || '-'}
-                    </p>
+                    <label className="block text-xs text-gray-500 mb-1">Identity Number</label>
+                    {isEditing ? (
+                        <input type="text" value={data.identity_number} onChange={(e) => setData('identity_number', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Enter identity number" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.identity_number || employee.national_number || '-'}</p>
+                    )}
                 </div>
 
-                {/* Expired Date Identity */}
+                {/* Identity Expired Date */}
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">Expired Date Identity</label>
+                    <label className="block text-xs text-gray-500 mb-1">Identity Expired Date</label>
                     <div className="flex items-center gap-4">
                         {isEditing ? (
                             <>
@@ -431,7 +598,7 @@ export default function EmployeeShow({
                                     type="date"
                                     value={data.identity_expired_date}
                                     onChange={(e) => setData('identity_expired_date', e.target.value)}
-                                    className="form-input flex-1"
+                                    className="form-input flex-1 border border-gray-300 rounded-lg px-3 py-2"
                                     disabled={data.is_permanent_identity}
                                 />
                                 <label className="flex items-center gap-2 text-sm">
@@ -452,318 +619,481 @@ export default function EmployeeShow({
                     </div>
                 </div>
 
+                {/* Birth Place */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Birth Place</label>
+                    {isEditing ? (
+                        <input type="text" value={data.birth_place} onChange={(e) => setData('birth_place', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Jakarta" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.birth_place || '-'}</p>
+                    )}
+                </div>
+
+                {/* Birth Date */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Birth Date</label>
+                    {isEditing ? (
+                        <input type="date" value={data.birth_date} onChange={(e) => setData('birth_date', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.birth_date || '-'}</p>
+                    )}
+                </div>
+
                 {/* Postal Code */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">Postal Code</label>
-                    <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
-                        {employee.postal_code || '-'}
-                    </p>
-                </div>
-            </div>
-
-            {/* Edit Button */}
-            <div className="flex justify-end pt-4">
-                <Link href={`/employees/${employee.id}/edit`} className="btn-primary">
-                    Edit Personal Data
-                </Link>
-            </div>
-        </div>
-    );
-
-    const renderFamilyInfo = () => (
-        <div className="space-y-8">
-            {/* Family Members Table */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Family Members</h3>
-                    <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            ADD NEW
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            IMPORT
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            EXPORT
-                        </button>
-                    </div>
+                    {isEditing ? (
+                        <input type="text" value={data.postal_code} onChange={(e) => setData('postal_code', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="12345" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.postal_code || '-'}</p>
+                    )}
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="bg-red-700 text-white">
-                                <th className="px-4 py-3 text-left text-xs font-medium">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Full Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Relationship</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Birth Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">No KTP</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Marital Status</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Gender</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Job</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {familyMembers.length > 0 ? (
-                                familyMembers.map((member, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-sm">{member.full_name}</td>
-                                        <td className="px-4 py-3 text-sm">{member.relationship}</td>
-                                        <td className="px-4 py-3 text-sm">{formatDate(member.birth_date)}</td>
-                                        <td className="px-4 py-3 text-sm">{member.ktp_number || '-'}</td>
-                                        <td className="px-4 py-3 text-sm">{member.marital_status}</td>
-                                        <td className="px-4 py-3 text-sm">{member.gender}</td>
-                                        <td className="px-4 py-3 text-sm">{member.job || '-'}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <div className="flex gap-2">
-                                                <button className="text-blue-600 hover:text-blue-800">Edit</button>
-                                                <button className="text-red-600 hover:text-red-800">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="9" className="px-4 py-8 text-center text-gray-500">
-                                        No family members registered yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Emergency Contacts Table */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Emergency Contacts</h3>
-                    <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            ADD NEW
-                        </button>
-                    </div>
+                {/* Photo */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Photo</label>
+                    {isEditing ? (
+                        <input type="file" accept="image/*" onChange={(e) => setData('profile_photo', e.target.files[0])} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.profile_photo_path ? 'Photo uploaded' : 'No photo'}</p>
+                    )}
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="bg-red-700 text-white">
-                                <th className="px-4 py-3 text-left text-xs font-medium">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Relationship</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Phone Number</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {emergencyContacts.length > 0 ? (
-                                emergencyContacts.map((contact, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-sm">{contact.name}</td>
-                                        <td className="px-4 py-3 text-sm">{contact.relationship}</td>
-                                        <td className="px-4 py-3 text-sm">{contact.phone_number}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <div className="flex gap-2">
-                                                <button className="text-blue-600 hover:text-blue-800">Edit</button>
-                                                <button className="text-red-600 hover:text-red-800">Delete</button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
-                                        No emergency contacts registered yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                {/* Address */}
+                <div className="md:col-span-2">
+                    <label className="block text-xs text-gray-500 mb-1">Address</label>
+                    {isEditing ? (
+                        <textarea value={data.address} onChange={(e) => setData('address', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" rows={3} placeholder="Enter full address" />
+                    ) : (
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.address || '-'}</p>
+                    )}
                 </div>
             </div>
         </div>
     );
 
-    const renderEducationInfo = () => (
-        <div className="space-y-8">
-            {/* Training/Course Table */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            ADD NEW
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            IMPORT
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            EXPORT
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Showing</span>
-                            <select className="form-input w-16 text-sm">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Search</span>
-                            <input
-                                type="text"
-                                className="form-input w-32 text-sm"
-                                placeholder="Search..."
-                            />
-                        </div>
-                    </div>
-                </div>
+    const renderFamilyInfo = () => {
+        const displayMembers = isEditing ? editableFamilyMembers : familyMembers;
+        const displayContacts = isEditing ? editableEmergencyContacts : emergencyContacts;
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="bg-red-700 text-white">
-                                <th className="px-4 py-3 text-left text-xs font-medium">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Name</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Held By</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Start Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">End Date</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Duration (day)</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Fee</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Certificate</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {trainingCourses.length > 0 ? (
-                                trainingCourses.map((course, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-sm">{course.name}</td>
-                                        <td className="px-4 py-3 text-sm">{course.held_by}</td>
-                                        <td className="px-4 py-3 text-sm">{course.start_date}</td>
-                                        <td className="px-4 py-3 text-sm">{course.end_date}</td>
-                                        <td className="px-4 py-3 text-sm">{course.duration}</td>
-                                        <td className="px-4 py-3 text-sm">{formatCurrency(course.fee)}</td>
-                                        <td className="px-4 py-3 text-sm">{course.certificate ? 'Yes' : 'No'}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <div className="flex gap-2">
-                                                <button className="text-blue-600 hover:text-blue-800">Edit</button>
-                                                <button className="text-red-600 hover:text-red-800">Delete</button>
-                                            </div>
+        return (
+            <div className="space-y-8">
+                {/* Family Members Table */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Family Members</h3>
+                        {isEditing && (
+                            <button 
+                                type="button"
+                                onClick={addFamilyMember}
+                                className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                            >
+                                + ADD NEW
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-red-700 text-white">
+                                    <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Full Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Relationship</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Birth Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">ID Number</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Gender</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Job</th>
+                                    {isEditing && <th className="px-4 py-3 text-left text-xs font-medium">Action</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {displayMembers.length > 0 ? (
+                                    displayMembers.map((member, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={member.full_name} onChange={(e) => updateFamilyMember(idx, 'full_name', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Full name" />
+                                                ) : member.full_name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <select value={member.relationship} onChange={(e) => updateFamilyMember(idx, 'relationship', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2">
+                                                        {relationshipOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                                                    </select>
+                                                ) : member.relationship || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="date" value={member.birth_date} onChange={(e) => updateFamilyMember(idx, 'birth_date', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
+                                                ) : formatDate(member.birth_date) || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={member.id_number} onChange={(e) => updateFamilyMember(idx, 'id_number', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="ID number" />
+                                                ) : member.id_number || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <select value={member.gender} onChange={(e) => updateFamilyMember(idx, 'gender', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2">
+                                                        <option value="male">Male</option>
+                                                        <option value="female">Female</option>
+                                                    </select>
+                                                ) : member.gender || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={member.job} onChange={(e) => updateFamilyMember(idx, 'job', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Job" />
+                                                ) : member.job || '-'}
+                                            </td>
+                                            {isEditing && (
+                                                <td className="px-4 py-3 text-sm">
+                                                    <button type="button" onClick={() => removeFamilyMember(idx)} className="text-red-600 hover:text-red-800">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={isEditing ? "8" : "7"} className="px-4 py-8 text-center text-gray-500">
+                                            No family members registered yet.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="9" className="px-4 py-8 text-center text-gray-500">
-                                        No training or courses registered yet.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                {/* Pagination */}
-                <div className="flex items-center justify-between mt-4">
-                    <p className="text-sm text-gray-500">
-                        Showing 0 to 0 of 0 entries
-                    </p>
-                    <div className="flex items-center gap-2">
-                        <button className="px-3 py-1 text-sm border rounded hover:bg-gray-50">&lt;</button>
-                        <span className="px-3 py-1 text-sm">1</span>
-                        <button className="px-3 py-1 text-sm border rounded hover:bg-gray-50">&gt;</button>
-                        <button className="px-4 py-1 text-sm bg-gray-600 text-white rounded">GO</button>
+                {/* Emergency Contacts Table */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Emergency Contacts</h3>
+                        {isEditing && (
+                            <button type="button" onClick={addEmergencyContact} className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                                + ADD NEW
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-red-700 text-white">
+                                    <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Relationship</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Phone Number</th>
+                                    {isEditing && <th className="px-4 py-3 text-left text-xs font-medium">Action</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {displayContacts.length > 0 ? (
+                                    displayContacts.map((contact, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={contact.name} onChange={(e) => updateEmergencyContact(idx, 'name', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Contact name" />
+                                                ) : contact.name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <select value={contact.relationship} onChange={(e) => updateEmergencyContact(idx, 'relationship', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2">
+                                                        {relationshipOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                                                    </select>
+                                                ) : contact.relationship || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="tel" value={contact.phone} onChange={(e) => updateEmergencyContact(idx, 'phone', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="08xxxxxxxxxx" />
+                                                ) : contact.phone || '-'}
+                                            </td>
+                                            {isEditing && (
+                                                <td className="px-4 py-3 text-sm">
+                                                    <button type="button" onClick={() => removeEmergencyContact(idx)} className="text-red-600 hover:text-red-800">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={isEditing ? "5" : "4"} className="px-4 py-8 text-center text-gray-500">
+                                            No emergency contacts registered yet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        );
+    };
 
-            {/* Working Experience Section */}
-            <div>
-                <h3 className="text-xl font-light text-gray-900 mb-4">Working experience</h3>
+    const renderEducationInfo = () => {
+        const displayEducation = isEditing ? editableEducation : (employee.education || []);
 
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex gap-2">
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            ADD NEW
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            IMPORT
-                        </button>
-                        <button className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50">
-                            EXPORT
-                        </button>
+        return (
+            <div className="space-y-8">
+                {/* Formal Education Section */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Education</h3>
+                        {isEditing && (
+                            <button type="button" onClick={addEducation} className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                                + ADD NEW
+                            </button>
+                        )}
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Showing</span>
-                            <select className="form-input w-16 text-sm">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-500">Search</span>
-                            <input
-                                type="text"
-                                className="form-input w-32 text-sm"
-                                placeholder="Search..."
-                            />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="bg-red-700 text-white">
-                                <th className="px-4 py-3 text-left text-xs font-medium">No</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Company</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Position</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">From</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">To</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Length of Service</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {workExperiences.length > 0 ? (
-                                workExperiences.map((exp, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3 text-sm">{idx + 1}</td>
-                                        <td className="px-4 py-3 text-sm">{exp.company}</td>
-                                        <td className="px-4 py-3 text-sm">{exp.position}</td>
-                                        <td className="px-4 py-3 text-sm">{exp.from_date}</td>
-                                        <td className="px-4 py-3 text-sm">{exp.to_date}</td>
-                                        <td className="px-4 py-3 text-sm">{exp.length_of_service}</td>
-                                        <td className="px-4 py-3 text-sm">
-                                            <div className="flex gap-2">
-                                                <button className="text-blue-600 hover:text-blue-800">Edit</button>
-                                                <button className="text-red-600 hover:text-red-800">Delete</button>
-                                            </div>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-red-700 text-white">
+                                    <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Grade</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Institution</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Major</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Start Year</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">End Year</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">GPA</th>
+                                    {isEditing && <th className="px-4 py-3 text-left text-xs font-medium">Action</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {displayEducation.length > 0 ? (
+                                    displayEducation.map((edu, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <select value={edu.grade} onChange={(e) => updateEducation(idx, 'grade', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2">
+                                                        {educationLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                                                    </select>
+                                                ) : edu.grade || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={edu.institution} onChange={(e) => updateEducation(idx, 'institution', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Institution name" />
+                                                ) : edu.institution || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={edu.major} onChange={(e) => updateEducation(idx, 'major', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Major" />
+                                                ) : edu.major || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={edu.start_year} onChange={(e) => updateEducation(idx, 'start_year', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" placeholder="2020" />
+                                                ) : edu.start_year || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={edu.end_year} onChange={(e) => updateEducation(idx, 'end_year', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" placeholder="2024" />
+                                                ) : edu.end_year || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={edu.gpa} onChange={(e) => updateEducation(idx, 'gpa', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" placeholder="3.50" />
+                                                ) : edu.gpa || '-'}
+                                            </td>
+                                            {isEditing && (
+                                                <td className="px-4 py-3 text-sm">
+                                                    <button type="button" onClick={() => removeEducation(idx)} className="text-red-600 hover:text-red-800">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={isEditing ? "8" : "7"} className="px-4 py-8 text-center text-gray-500">
+                                            No education records registered yet.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
-                                        No working experience registered yet.
-                                    </td>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Training/Course Table */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-gray-900">Training & Courses</h3>
+                        {isEditing && (
+                            <button type="button" onClick={addTrainingCourse} className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                                + ADD NEW
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-red-700 text-white">
+                                    <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Name</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Held By</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Start Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">End Date</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Duration (day)</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Fee</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Certificate</th>
+                                    {isEditing && <th className="px-4 py-3 text-left text-xs font-medium">Action</th>}
                                 </tr>
-                            )}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {(isEditing ? editableTrainingCourses : trainingCourses).length > 0 ? (
+                                    (isEditing ? editableTrainingCourses : trainingCourses).map((course, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={course.name} onChange={(e) => updateTrainingCourse(idx, 'name', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Training name" />
+                                                ) : course.name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={course.held_by} onChange={(e) => updateTrainingCourse(idx, 'held_by', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Organizer" />
+                                                ) : course.held_by || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="date" value={course.start_date} onChange={(e) => updateTrainingCourse(idx, 'start_date', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
+                                                ) : course.start_date || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="date" value={course.end_date} onChange={(e) => updateTrainingCourse(idx, 'end_date', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
+                                                ) : course.end_date || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="number" value={course.duration} onChange={(e) => updateTrainingCourse(idx, 'duration', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-20" placeholder="Days" />
+                                                ) : course.duration || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="number" value={course.fee} onChange={(e) => updateTrainingCourse(idx, 'fee', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-28" placeholder="0" />
+                                                ) : formatCurrency(course.fee) || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="checkbox" checked={course.certificate} onChange={(e) => updateTrainingCourse(idx, 'certificate', e.target.checked)} className="form-checkbox h-4 w-4" />
+                                                ) : course.certificate ? 'Yes' : 'No'}
+                                            </td>
+                                            {isEditing && (
+                                                <td className="px-4 py-3 text-sm">
+                                                    <button type="button" onClick={() => removeTrainingCourse(idx)} className="text-red-600 hover:text-red-800">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={isEditing ? "9" : "8"} className="px-4 py-8 text-center text-gray-500">
+                                            No training or courses registered yet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Working Experience Section */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-light text-gray-900">Working Experience</h3>
+                        {isEditing && (
+                            <button type="button" onClick={addWorkExperience} className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700">
+                                + ADD NEW
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="bg-red-700 text-white">
+                                    <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Company</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Position</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">From</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">To</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Length of Service</th>
+                                    {isEditing && <th className="px-4 py-3 text-left text-xs font-medium">Action</th>}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {(isEditing ? editableWorkExperience : workExperiences).length > 0 ? (
+                                    (isEditing ? editableWorkExperience : workExperiences).map((exp, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={exp.company} onChange={(e) => updateWorkExperience(idx, 'company', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Company name" />
+                                                ) : exp.company || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="text" value={exp.position} onChange={(e) => updateWorkExperience(idx, 'position', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2 w-full" placeholder="Position" />
+                                                ) : exp.position || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="date" value={exp.from} onChange={(e) => updateWorkExperience(idx, 'from', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
+                                                ) : exp.from || exp.from_date || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">
+                                                {isEditing ? (
+                                                    <input type="date" value={exp.to} onChange={(e) => updateWorkExperience(idx, 'to', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
+                                                ) : exp.to || exp.to_date || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm">{exp.length_of_service || '-'}</td>
+                                            {isEditing && (
+                                                <td className="px-4 py-3 text-sm">
+                                                    <button type="button" onClick={() => removeWorkExperience(idx)} className="text-red-600 hover:text-red-800">
+                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            )}
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={isEditing ? "7" : "6"} className="px-4 py-8 text-center text-gray-500">
+                                            No working experience registered yet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderPayrollInfo = () => (
         <div className="space-y-6">
@@ -776,40 +1106,74 @@ export default function EmployeeShow({
             {/* Basic Salary */}
             <div className="mb-6">
                 <p className="text-sm text-gray-500">Basic Salary</p>
-                <div className="flex items-center gap-4">
+                {isEditing ? (
+                    <input
+                        type="number"
+                        value={data.basic_salary}
+                        onChange={(e) => setData('basic_salary', e.target.value)}
+                        className="form-input text-2xl font-bold w-full"
+                        min="0"
+                    />
+                ) : (
                     <span className="text-3xl font-bold text-gray-900">
                         Rp {formatCurrency(employee.basic_salary)}
                     </span>
-                    <Link
-                        href={`/employees/${employee.id}/edit`}
-                        className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
-                    >
-                        TRANSACTION ADJUSTMENT
-                    </Link>
-                </div>
+                )}
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-                <InfoField label="PTKP Status" value={employee.ptkp_status || 'TK/0'} />
-                <InfoField label="Tax Configuration" value={employee.tax_configuration || 'Gross'} />
-                <InfoField label="Prorate Type" value={employee.prorate_type || 'Based on Working Day'} />
-                <div></div>
+                {/* PTKP Status */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">PTKP Status</label>
+                    {isEditing ? (
+                        <select value={data.ptkp_status} onChange={(e) => setData('ptkp_status', e.target.value)} className="form-input w-full">
+                            {ptkpOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.ptkp_status || 'TK/0'}</p>}
+                </div>
+                {/* Tax Configuration */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Tax Configuration</label>
+                    {isEditing ? (
+                        <select value={data.tax_configuration} onChange={(e) => setData('tax_configuration', e.target.value)} className="form-input w-full">
+                            {taxConfigs.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.tax_configuration || 'Gross'}</p>}
+                </div>
+                {/* Prorate Type */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Prorate Type</label>
+                    {isEditing ? (
+                        <select value={data.prorate_type} onChange={(e) => setData('prorate_type', e.target.value)} className="form-input w-full">
+                            {prorateTypes.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.prorate_type || 'Based on Working Day'}</p>}
+                </div>
+                {/* Salary Type */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Salary Type</label>
+                    {isEditing ? (
+                        <select value={data.salary_type} onChange={(e) => setData('salary_type', e.target.value)} className="form-input w-full">
+                            {salaryTypes.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.salary_type || 'Monthly'}</p>}
+                </div>
 
+                {/* Checkbox */}
                 <div className="md:col-span-2">
                     <label className="flex items-center gap-2 text-sm text-gray-600">
                         <input
                             type="checkbox"
-                            checked={employee.count_holiday_as_working_day}
-                            disabled
+                            checked={isEditing ? data.count_national_holiday : employee.count_national_holiday}
+                            onChange={(e) => setData('count_national_holiday', e.target.checked)}
+                            disabled={!isEditing}
                             className="rounded border-gray-300"
                         />
                         Count national holiday as a working day
                     </label>
                 </div>
 
-                <InfoField label="Type Salary" value={employee.salary_type || 'Monthly'} />
-                <InfoField label="Salary Configuration" value={employee.salary_configuration || 'Taxable'} />
-                <InfoField label="Overtime status" value={employee.overtime_status || 'Eligible'} />
+                <InfoField label="Overtime Status" value={employee.overtime_status || 'Eligible'} />
                 <InfoField label="Employee Tax Status" value={employee.employee_tax_status || 'Pegawai Tetap'} />
                 <InfoField label="JHT Configuration" value={employee.jht_configuration || 'Default'} />
                 <InfoField label="BPJS Kesehatan Configuration" value={employee.bpjs_kesehatan_config || 'By Company'} />
@@ -821,9 +1185,35 @@ export default function EmployeeShow({
             <div className="pt-6 border-t">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Information</h3>
                 <div className="grid md:grid-cols-3 gap-6">
-                    <InfoField label="Bank Name" value={employee.bank_name || '-'} />
-                    <InfoField label="Account Number" value={employee.bank_account_number || '-'} />
-                    <InfoField label="Account Holder" value={employee.bank_account_holder || '-'} />
+                    {isEditing ? (
+                        <>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Bank Name</label>
+                                <select value={data.bank_name} onChange={(e) => setData('bank_name', e.target.value)} className="form-input w-full">
+                                    <option value="">Select Bank</option>
+                                    <option value="BCA">BCA</option>
+                                    <option value="Mandiri">Mandiri</option>
+                                    <option value="BNI">BNI</option>
+                                    <option value="BRI">BRI</option>
+                                    <option value="CIMB Niaga">CIMB Niaga</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Account Number</label>
+                                <input type="text" value={data.bank_account_number} onChange={(e) => setData('bank_account_number', e.target.value)} className="form-input w-full" />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Account Holder</label>
+                                <input type="text" value={data.bank_account_holder} onChange={(e) => setData('bank_account_holder', e.target.value)} className="form-input w-full" />
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <InfoField label="Bank Name" value={employee.bank_name || '-'} />
+                            <InfoField label="Account Number" value={employee.bank_account_number || '-'} />
+                            <InfoField label="Account Holder" value={employee.bank_account_holder || '-'} />
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -936,7 +1326,7 @@ export default function EmployeeShow({
                     </div>
                 )}
 
-                {/* Employee Header with Photo */}
+                {/* Employee Header with Photo and Edit Button */}
                 <div className="flex items-center gap-6 pb-6">
                     <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                         {employee.profile_photo_path ? (
@@ -958,6 +1348,39 @@ export default function EmployeeShow({
                         <p className="text-sm text-gray-500">
                             {employee.timeline?.position?.name || employee.contract?.name || 'Staff'}
                         </p>
+                    </div>
+                    {/* Edit/Save Buttons */}
+                    <div className="flex gap-3">
+                        {isEditing ? (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(false)}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleSave}
+                                    disabled={processing}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                                >
+                                    {processing ? 'Saving...' : 'Save Employee'}
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setIsEditing(true)}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                Edit Employee
+                            </button>
+                        )}
                     </div>
                 </div>
 

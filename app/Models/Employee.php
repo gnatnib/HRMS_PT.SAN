@@ -72,12 +72,16 @@ class Employee extends Model
         'family_members',
         'emergency_contacts',
         'education',
+        'training_courses',
+        'work_experience',
     ];
 
     protected $casts = [
         'family_members' => 'array',
         'emergency_contacts' => 'array',
         'education' => 'array',
+        'training_courses' => 'array',
+        'work_experience' => 'array',
         'is_permanent_identity' => 'boolean',
         'birth_date' => 'date',
         'identity_expired_date' => 'date',

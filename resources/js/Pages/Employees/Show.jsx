@@ -293,6 +293,26 @@ export default function EmployeeShow({
         return `${years} Year ${months} Month ${days} Day`;
     };
 
+    // Calculate work experience duration from start and end dates
+    const calculateWorkDuration = (fromDate, toDate) => {
+        if (!fromDate || !toDate) return '-';
+        const start = new Date(fromDate);
+        const end = new Date(toDate);
+
+        let years = end.getFullYear() - start.getFullYear();
+        let months = end.getMonth() - start.getMonth();
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        if (years === 0) {
+            return `${months} Month${months !== 1 ? 's' : ''}`;
+        }
+        return `${years} Year${years !== 1 ? 's' : ''} ${months} Month${months !== 1 ? 's' : ''}`;
+    };
+
     const handleDelete = () => {
         if (confirm(`Hapus karyawan "${employee.first_name} ${employee.last_name}"?`)) {
             router.delete(`/employees/${employee.id}`);
@@ -303,7 +323,7 @@ export default function EmployeeShow({
     const familyMembers = employee.family_members || [];
     const emergencyContacts = employee.emergency_contacts || [];
     const trainingCourses = employee.training_courses || [];
-    const workExperiences = employee.work_experiences || [];
+    const workExperiences = employee.work_experience || [];
 
     const renderMainTabContent = () => {
         switch (activeTab) {
@@ -348,8 +368,8 @@ export default function EmployeeShow({
                             key={tab.id}
                             onClick={() => setActiveSubTab(tab.id)}
                             className={`pb-3 text-sm font-medium transition-colors ${activeSubTab === tab.id
-                                    ? 'text-red-600 border-b-2 border-red-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-red-600 border-b-2 border-red-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             {tab.name}
@@ -683,7 +703,7 @@ export default function EmployeeShow({
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-medium text-gray-900">Family Members</h3>
                         {isEditing && (
-                            <button 
+                            <button
                                 type="button"
                                 onClick={addFamilyMember}
                                 className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700"
@@ -740,7 +760,7 @@ export default function EmployeeShow({
                                                         <option value="male">Male</option>
                                                         <option value="female">Female</option>
                                                     </select>
-                                                ) : member.gender || '-'}
+                                                ) : (member.gender ? member.gender.charAt(0).toUpperCase() + member.gender.slice(1) : '-')}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 {isEditing ? (
@@ -1068,7 +1088,7 @@ export default function EmployeeShow({
                                                     <input type="date" value={exp.to} onChange={(e) => updateWorkExperience(idx, 'to', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
                                                 ) : exp.to || exp.to_date || '-'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm">{exp.length_of_service || '-'}</td>
+                                            <td className="px-4 py-3 text-sm">{calculateWorkDuration(exp.from, exp.to)}</td>
                                             {isEditing && (
                                                 <td className="px-4 py-3 text-sm">
                                                     <button type="button" onClick={() => removeWorkExperience(idx)} className="text-red-600 hover:text-red-800">
@@ -1392,8 +1412,8 @@ export default function EmployeeShow({
                                 <Menu as="div" key={tab.id} className="relative">
                                     <Menu.Button
                                         className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${tab.items.some(i => i.id === activeTab)
-                                                ? 'text-red-600 border-red-600 bg-red-50'
-                                                : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                                            ? 'text-red-600 border-red-600 bg-red-50'
+                                            : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
                                             }`}
                                     >
                                         <span>{tab.icon}</span>
@@ -1435,8 +1455,8 @@ export default function EmployeeShow({
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id
-                                            ? 'text-red-600 border-red-600 bg-red-50'
-                                            : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                                        ? 'text-red-600 border-red-600 bg-red-50'
+                                        : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
                                         }`}
                                 >
                                     <span>{tab.icon}</span>

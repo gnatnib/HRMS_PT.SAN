@@ -176,16 +176,10 @@ class DashboardController extends Controller
 
     private function getGenderDiversity(): array
     {
-        $male = Employee::where('gender', 'male')->count();
-        $female = Employee::where('gender', 'female')->count();
+        // Gender is stored as integer: 1 = male, 0 = female
+        $male = Employee::where('gender', 1)->count();
+        $female = Employee::where('gender', 0)->count();
         $total = $male + $female;
-
-        // Dummy data if no employees
-        if ($total === 0) {
-            $male = 6;
-            $female = 7;
-            $total = 13;
-        }
 
         return [
             'total' => $total,

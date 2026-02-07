@@ -177,9 +177,10 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                     <th className="px-4 py-3 text-left text-xs font-medium">Full Name</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Employee ID</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Barcode</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Organization</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Division</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Job Position</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Job Level</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Branch</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Actions</th>
                                 </tr>
                             </thead>
@@ -199,6 +200,10 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                                                 src={`/storage/${emp.profile_photo_path}`}
                                                                 alt={emp.first_name}
                                                                 className="w-full h-full object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.style.display = 'none';
+                                                                    e.target.parentElement.innerHTML = `<span class="text-sm font-bold text-gray-400">${emp.first_name?.charAt(0) || '?'}</span>`;
+                                                                }}
                                                             />
                                                         ) : (
                                                             <span className="text-sm font-bold text-gray-400">
@@ -223,13 +228,18 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                                 {emp.barcode || `AII${emp.id}`}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.contract?.department?.name || '-'}
+                                                {emp.center?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.contract?.position?.name || emp.contract?.name || 'Staff'}
+                                                {emp.position?.name
+                                                    ? `${emp.position.name}${emp.center?.name ? ` (${emp.center.name})` : ''}`
+                                                    : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.contract?.name || 'Staff'}
+                                                {emp.contract?.name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {emp.department?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
@@ -282,10 +292,10 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                         onClick={() => link.url && router.get(link.url)}
                                         disabled={!link.url}
                                         className={`px-3 py-1 text-sm rounded ${link.active
-                                                ? 'bg-red-600 text-white'
-                                                : link.url
-                                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                                    : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                                            ? 'bg-red-600 text-white'
+                                            : link.url
+                                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
                                             }`}
                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                     />

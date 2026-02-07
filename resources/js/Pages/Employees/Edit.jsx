@@ -2,11 +2,11 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
-export default function EmployeeEdit({ 
-    auth, 
-    employee, 
-    departments = [], 
-    positions = [], 
+export default function EmployeeEdit({
+    auth,
+    employee,
+    departments = [],
+    positions = [],
     contracts = [],
     centers = []
 }) {
@@ -19,7 +19,7 @@ export default function EmployeeEdit({
         // Employment Data
         employee_code: employee.employee_code || '',
         barcode: employee.barcode || '',
-        organization_id: employee.organization_id || '',
+        center_id: employee.center_id || '',
         position_id: employee.position_id || '',
         employment_status: employee.employment_status || 'Permanent',
         department_id: employee.department_id || '',
@@ -92,26 +92,26 @@ export default function EmployeeEdit({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+
         // Validate mandatory fields
         const requiredFields = [
             { field: 'first_name', label: 'First Name', section: 'personal' },
             { field: 'gender', label: 'Gender', section: 'personal' },
-            { field: 'organization_id', label: 'Division', section: 'employment' },
+            { field: 'center_id', label: 'Division', section: 'employment' },
             { field: 'position_id', label: 'Job Position', section: 'employment' },
             { field: 'contract_id', label: 'Job Level', section: 'employment' },
             { field: 'employment_status', label: 'Employment Status', section: 'employment' },
             { field: 'join_date', label: 'Join Date', section: 'employment' },
         ];
-        
+
         const missingFields = requiredFields.filter(({ field }) => !data[field] || data[field] === '');
-        
+
         if (missingFields.length > 0) {
             setValidationErrors(missingFields);
             setShowValidationModal(true);
             return;
         }
-        
+
         post(`/employees/${employee.id}`, {
             forceFormData: true,
         });
@@ -203,8 +203,8 @@ export default function EmployeeEdit({
                                 type="button"
                                 onClick={() => setActiveSection(section.id)}
                                 className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${activeSection === section.id
-                                        ? 'text-red-600 border-b-2 border-red-600 bg-red-50/50'
-                                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                    ? 'text-red-600 border-b-2 border-red-600 bg-red-50/50'
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 {section.name}
@@ -219,7 +219,7 @@ export default function EmployeeEdit({
                         <div className="space-y-6">
                             <SectionHeader
                                 title="Employment Data"
-                                description="Enter organization and job information for the employee"
+                                description="Enter division and job information for the employee"
                             />
                             <div className="grid md:grid-cols-2 gap-6">
                                 <FormField label="Company ID">
@@ -231,13 +231,13 @@ export default function EmployeeEdit({
                                     />
                                 </FormField>
 
-                                <FormField label="Division" required error={errors.organization_id}>
+                                <FormField label="Division" required error={errors.center_id}>
                                     <select
-                                        value={data.organization_id}
-                                        onChange={(e) => setData('organization_id', e.target.value)}
+                                        value={data.center_id}
+                                        onChange={(e) => setData('center_id', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Organization</option>
+                                        <option value="">Select Division</option>
                                         {centers.map((c) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
@@ -440,7 +440,7 @@ export default function EmployeeEdit({
                                 title="Payroll Information"
                                 description="Enter salary and tax configuration"
                             />
-                            
+
                             {/* Basic Salary */}
                             <div className="p-4 bg-gray-50 rounded-lg">
                                 <div className="flex items-center justify-between">
@@ -735,7 +735,7 @@ export default function EmployeeEdit({
                             {/* Payroll Components */}
                             <div className="pt-6 border-t">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Payroll Component</h3>
-                                
+
                                 {data.payroll_components.length > 0 && (
                                     <div className="space-y-3 mb-4">
                                         {data.payroll_components.map((component, index) => (
@@ -773,7 +773,7 @@ export default function EmployeeEdit({
                                         ))}
                                     </div>
                                 )}
-                                
+
                                 <button
                                     type="button"
                                     onClick={() => {

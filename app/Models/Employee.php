@@ -21,6 +21,9 @@ class Employee extends Model
     protected $fillable = [
         'id',
         'contract_id',
+        'position_id',
+        'department_id',
+        'center_id',
         'employee_code',
         'barcode',
         'first_name',
@@ -111,6 +114,21 @@ class Employee extends Model
     public function timelines(): HasMany
     {
         return $this->hasMany(Timeline::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function center(): BelongsTo
+    {
+        return $this->belongsTo(Center::class);
     }
 
     public function leaves(): BelongsToMany

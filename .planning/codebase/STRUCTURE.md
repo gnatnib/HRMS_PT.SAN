@@ -1,6 +1,6 @@
 # Project Structure
 
-## Directory Organization
+## Directory Division
 
 ### Root Level Structure
 ```
@@ -160,7 +160,7 @@ database/seeders/
 ├── DatabaseSeeder.php       # Main seeder
 ├── AdminUserSeeder.php       # Admin user creation
 ├── CenterSeeder.php         # Work locations
-├── DepartmentSeeder.php     # Organization structure
+├── DepartmentSeeder.php     # Division structure
 ├── EmployeeUserSeeder.php   # Employee accounts
 ├── EmployeesSeeder.php      # Sample employees
 ├── PositionSeeder.php       # Job positions
@@ -219,7 +219,7 @@ routes/
 
 ### Testing Structure (`tests/`)
 
-#### Test Organization
+#### Test Division
 ```
 tests/
 ├── CreatesApplication.php    # Test application creator
@@ -324,4 +324,4 @@ storage/
 └── Website (HRMS) - *.bat  # Development batch files
 ```
 
-This structure follows Laravel conventions with additional organization for the HRMS-specific functionality, making it easy to navigate and maintain the application codebase.
+This structure follows Laravel conventions with additional division for the HRMS-specific functionality, making it easy to navigate and maintain the application codebase.

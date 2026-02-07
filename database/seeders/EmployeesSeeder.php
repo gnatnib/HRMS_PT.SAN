@@ -4,13 +4,39 @@ namespace Database\Seeders;
 
 use App\Models\Employee;
 use App\Models\Contract;
+use App\Models\Position;
+use App\Models\Department;
+use App\Models\Center;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class EmployeesSeeder extends Seeder
 {
     public function run(): void
     {
         $contractId = Contract::first()?->id ?? 1;
+
+        // Get position IDs (now generic positions)
+        $director = Position::where('name', 'Director')->first()?->id ?? 1;
+        $manager = Position::where('name', 'Manager')->first()?->id ?? 1;
+        $seniorStaff = Position::where('name', 'Senior Staff')->first()?->id ?? 1;
+        $staff = Position::where('name', 'Staff')->first()?->id ?? 1;
+        $intern = Position::where('name', 'Intern')->first()?->id ?? 1;
+
+        $itCenter = Center::where('name', 'Information Technology')->first()?->id ?? 1;
+        $hrCenter = Center::where('name', 'Human Resources')->first()?->id ?? 1;
+        $financeCenter = Center::where('name', 'LIKE', 'Finance%')->first()?->id ?? 1;
+        $marketingCenter = Center::where('name', 'Marketing')->first()?->id ?? 1;
+
+        $bintaro = Department::where('name', 'Bintaro')->first()?->id ?? 1;
+        $headOffice = Department::where('name', 'LIKE', 'Head Office%')->first()?->id ?? 1;
+        $tangerang = Department::where('name', 'Tangerang')->first()?->id ?? 1;
+
+        // Create a default profile picture in storage if it doesn't exist
+        $defaultPhotoPath = 'profile-photos/default-avatar.svg';
+        if (!Storage::disk('public')->exists($defaultPhotoPath)) {
+            Storage::disk('public')->put($defaultPhotoPath, '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9CA3AF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>');
+        }
 
         $employees = [
             [
@@ -22,18 +48,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Kartini',
                 'gender' => 1,
                 'birth_and_place' => 'Jakarta, 15 Maret 1985',
+                'birth_place' => 'Jakarta',
+                'birth_date' => '1985-03-15',
                 'national_number' => '3175012503850001',
                 'mobile_number' => '08123456001',
                 'email' => 'darmayansyah@company.com',
                 'address' => 'Jl. Sudirman No. 123, Jakarta Selatan',
                 'degree' => 'S2 Management',
                 'contract_id' => $contractId,
+                'position_id' => $director,
+                'department_id' => $bintaro,
+                'center_id' => $itCenter,
                 'join_date' => '2018-01-15',
                 'is_active' => true,
                 'basic_salary' => 25000000,
                 'ptkp_status' => 'K/2',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-002',
@@ -44,18 +75,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Dewi',
                 'gender' => 0,
                 'birth_and_place' => 'Bandung, 22 Juli 1990',
+                'birth_place' => 'Bandung',
+                'birth_date' => '1990-07-22',
                 'national_number' => '3273012207900002',
                 'mobile_number' => '08123456002',
                 'email' => 'putri.indriani@company.com',
                 'address' => 'Jl. Dago No. 45, Bandung',
                 'degree' => 'S1 Akuntansi',
                 'contract_id' => $contractId,
+                'position_id' => $staff,
+                'department_id' => $headOffice,
+                'center_id' => $financeCenter,
                 'join_date' => '2019-03-01',
                 'is_active' => true,
                 'basic_salary' => 12000000,
                 'ptkp_status' => 'TK/0',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-003',
@@ -66,18 +102,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Sari',
                 'gender' => 0,
                 'birth_and_place' => 'Surabaya, 10 November 1988',
+                'birth_place' => 'Surabaya',
+                'birth_date' => '1988-11-10',
                 'national_number' => '3578011011880003',
                 'mobile_number' => '08123456003',
                 'email' => 'sheila.hartono@company.com',
                 'address' => 'Jl. Pemuda No. 78, Surabaya',
                 'degree' => 'S1 Psikologi',
                 'contract_id' => $contractId,
+                'position_id' => $manager,
+                'department_id' => $tangerang,
+                'center_id' => $hrCenter,
                 'join_date' => '2018-07-02',
                 'is_active' => true,
                 'basic_salary' => 6000000,
                 'ptkp_status' => 'TK/0',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-004',
@@ -88,18 +129,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Maya',
                 'gender' => 0,
                 'birth_and_place' => 'Semarang, 05 April 1992',
+                'birth_place' => 'Semarang',
+                'birth_date' => '1992-04-05',
                 'national_number' => '3374010504920004',
                 'mobile_number' => '08123456004',
                 'email' => 'wenny.asti@company.com',
                 'address' => 'Jl. Gajah Mada No. 99, Semarang',
                 'degree' => 'S1 Marketing',
                 'contract_id' => $contractId,
+                'position_id' => $staff,
+                'department_id' => $bintaro,
+                'center_id' => $marketingCenter,
                 'join_date' => '2020-01-10',
                 'is_active' => true,
                 'basic_salary' => 8500000,
                 'ptkp_status' => 'K/1',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-005',
@@ -110,18 +156,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Yuki',
                 'gender' => 1,
                 'birth_and_place' => 'Jakarta, 18 September 1987',
+                'birth_place' => 'Jakarta',
+                'birth_date' => '1987-09-18',
                 'national_number' => '3175011809870005',
                 'mobile_number' => '08123456005',
                 'email' => 'morita.michi@company.com',
                 'address' => 'Jl. Kuningan No. 12, Jakarta',
                 'degree' => 'S1 Teknik Informatika',
                 'contract_id' => $contractId,
+                'position_id' => $seniorStaff,
+                'department_id' => $headOffice,
+                'center_id' => $itCenter,
                 'join_date' => '2017-05-15',
                 'is_active' => true,
                 'basic_salary' => 15000000,
                 'ptkp_status' => 'K/0',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-006',
@@ -132,18 +183,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Nisa',
                 'gender' => 1,
                 'birth_and_place' => 'Yogyakarta, 28 Februari 1991',
+                'birth_place' => 'Yogyakarta',
+                'birth_date' => '1991-02-28',
                 'national_number' => '3404012802910006',
                 'mobile_number' => '08123456006',
                 'email' => 'mohammad.reza@company.com',
                 'address' => 'Jl. Malioboro No. 56, Yogyakarta',
                 'degree' => 'S1 Komunikasi',
                 'contract_id' => $contractId,
+                'position_id' => $staff,
+                'department_id' => $bintaro,
+                'center_id' => $itCenter,
                 'join_date' => '2019-08-01',
                 'is_active' => true,
                 'basic_salary' => 9500000,
                 'ptkp_status' => 'TK/0',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
             [
                 'employee_code' => '000-007',
@@ -154,18 +210,23 @@ class EmployeesSeeder extends Seeder
                 'mother_name' => 'Rina',
                 'gender' => 0,
                 'birth_and_place' => 'Medan, 14 Juni 1993',
+                'birth_place' => 'Medan',
+                'birth_date' => '1993-06-14',
                 'national_number' => '1271011406930007',
                 'mobile_number' => '08123456007',
                 'email' => 'firda.amelia@company.com',
                 'address' => 'Jl. Asia No. 23, Medan',
                 'degree' => 'S1 Akuntansi',
                 'contract_id' => $contractId,
+                'position_id' => $intern,
+                'department_id' => $bintaro,
+                'center_id' => $itCenter,
                 'join_date' => '2021-02-15',
                 'is_active' => true,
                 'basic_salary' => 7500000,
                 'ptkp_status' => 'TK/0',
                 'max_leave_allowed' => 12,
-                'profile_photo_path' => 'profile-photos/.default-photo.jpg',
+                'profile_photo_path' => $defaultPhotoPath,
             ],
         ];
 

@@ -22,13 +22,12 @@ export default function EmployeeShow({
         // Employment Data
         employee_code: employee.employee_code || '',
         barcode: employee.barcode || '',
-        organization_id: employee.organization_id || employee.timeline?.department?.id || '',
-        position_id: employee.position_id || employee.timeline?.position?.id || '',
+        center_id: employee.center_id || '',
+        position_id: employee.position_id || '',
         employment_status: employee.employment_status || 'Permanent',
         department_id: employee.department_id || '',
         join_date: employee.join_date || '',
         contract_id: employee.contract_id || '',
-        center_id: employee.timeline?.center?.id || '',
 
         // Personal Data
         first_name: employee.first_name || '',
@@ -416,14 +415,14 @@ export default function EmployeeShow({
                         Division<span className="text-red-500">*</span>
                     </label>
                     <select
-                        value={data.organization_id}
-                        onChange={(e) => setData('organization_id', e.target.value)}
+                        value={data.center_id}
+                        onChange={(e) => setData('center_id', e.target.value)}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
-                        <option value="">Select Organization</option>
-                        {departments.map((dept) => (
-                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        <option value="">Select Division</option>
+                        {centers.map((center) => (
+                            <option key={center.id} value={center.id}>{center.name}</option>
                         ))}
                     </select>
                 </div>
@@ -486,14 +485,14 @@ export default function EmployeeShow({
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">Branch</label>
                     <select
-                        value={data.center_id}
-                        onChange={(e) => setData('center_id', e.target.value)}
+                        value={data.department_id}
+                        onChange={(e) => setData('department_id', e.target.value)}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
                         <option value="">Select Branch</option>
-                        {centers.map((center) => (
-                            <option key={center.id} value={center.id}>{center.name}</option>
+                        {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>{dept.name}</option>
                         ))}
                     </select>
                 </div>
@@ -655,7 +654,7 @@ export default function EmployeeShow({
                     {isEditing ? (
                         <input type="date" value={data.birth_date} onChange={(e) => setData('birth_date', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" />
                     ) : (
-                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.birth_date || '-'}</p>
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{formatDate(employee.birth_date)}</p>
                     )}
                 </div>
 

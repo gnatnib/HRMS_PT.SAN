@@ -19,7 +19,12 @@ class EmployeeController extends Controller
         $status = $request->get('status');
         $branch = $request->get('branch');
 
-        $query = Employee::with(['contract:id,name'])
+        $query = Employee::with([
+            'contract:id,name',
+            'position:id,name',
+            'department:id,name',
+            'center:id,name',
+        ])
             ->select(
                 'id',
                 'employee_code',
@@ -30,8 +35,12 @@ class EmployeeController extends Controller
                 'is_active',
                 'profile_photo_path',
                 'contract_id',
+                'position_id',
+                'department_id',
+                'center_id',
                 'join_date',
-                'basic_salary'
+                'basic_salary',
+                'barcode'
             );
 
         if ($search) {
@@ -125,12 +134,12 @@ class EmployeeController extends Controller
             // Employment Data
             'employee_code' => 'nullable|string|max:20',
             'barcode' => 'nullable|string|max:50',
-            'organization_id' => 'nullable|exists:centers,id',
+            'center_id' => 'nullable|exists:centers,id',
             'position_id' => 'nullable|exists:positions,id',
             'department_id' => 'nullable|exists:departments,id',
             'employment_status' => 'nullable|string|max:30',
             'contract_id' => 'nullable|exists:contracts,id',
-            'join_date' => 'nullable|date',
+            'join_date' => 'nullable|date|before_or_equal:today',
             'max_leave_allowed' => 'nullable|integer|min:0|max:30',
 
             // Family Info (JSON arrays)
@@ -210,10 +219,6 @@ class EmployeeController extends Controller
         // Clean up non-database fields (only remove fields without DB columns)
         unset(
             $validated['identity_permanent'], // Renamed to is_permanent_identity
-            $validated['organization_id'],
-            $validated['position_id'],
-            $validated['department_id'],
-            $validated['employment_status'],
             $validated['family_data'],
             $validated['education_history'],
             $validated['work_experience'],
@@ -300,7 +305,11 @@ class EmployeeController extends Controller
             'employee_code' => 'nullable|string|max:20',
             'barcode' => 'nullable|string|max:50',
             'contract_id' => 'nullable|exists:contracts,id',
-            'join_date' => 'nullable|date',
+            'position_id' => 'nullable|exists:positions,id',
+            'center_id' => 'nullable|exists:centers,id',
+            'department_id' => 'nullable|exists:departments,id',
+            'employment_status' => 'nullable|string|max:30',
+            'join_date' => 'nullable|date|before_or_equal:today',
             'is_active' => 'boolean',
             'max_leave_allowed' => 'nullable|integer|min:0|max:30',
             // Payroll

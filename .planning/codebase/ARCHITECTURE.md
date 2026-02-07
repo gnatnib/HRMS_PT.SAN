@@ -63,7 +63,7 @@ Data Access:
 - **Employee Model** - Central entity
 - **Contract Management** - Employment contracts
 - **Position Hierarchy** - Organizational structure
-- **Department Structure** - Departmental organization
+- **Department Structure** - Departmental division
 
 #### Attendance & Time Tracking
 - **Fingerprint System** - Biometric attendance
@@ -253,7 +253,7 @@ Scalability Design:
 
 ## Development Architecture
 
-### Code Organization
+### Code Division
 ```
 Namespace Structure:
 ├── App\Http\Controllers (Web layer)

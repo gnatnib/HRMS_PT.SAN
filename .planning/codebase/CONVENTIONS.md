@@ -10,7 +10,7 @@
 - **PascalCase** - Class names and namespaces
 - **UPPER_SNAKE_CASE** - Constants
 
-### File Organization
+### File Division
 ```
 Single Responsibility Principle:
 - One class per file
@@ -181,7 +181,7 @@ return response()->json([
 
 ## Testing Conventions
 
-### Test Organization
+### Test Division
 ```php
 // Feature test naming
 class EmployeeManagementTest extends TestCase

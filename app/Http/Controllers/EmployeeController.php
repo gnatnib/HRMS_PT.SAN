@@ -18,6 +18,7 @@ class EmployeeController extends Controller
         $search = $request->get('search');
         $status = $request->get('status');
         $branch = $request->get('branch');
+        $division = $request->get('division');
 
         $query = Employee::with([
             'contract:id,name',
@@ -33,6 +34,7 @@ class EmployeeController extends Controller
                 'mobile_number',
                 'email',
                 'is_active',
+                'employment_status',
                 'profile_photo_path',
                 'contract_id',
                 'position_id',
@@ -53,8 +55,27 @@ class EmployeeController extends Controller
             });
         }
 
+        // Status filter - supports multiple statuses
         if ($status !== null && $status !== '') {
-            $query->where('is_active', $status === 'active');
+            if ($status === 'active') {
+                $query->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip']);
+            } elseif ($status === 'terminated') {
+                $query->where('is_active', false);
+            } elseif ($status === 'probation') {
+                $query->where('employment_status', 'Probation');
+            } elseif ($status === 'on_leave') {
+                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip']);
+            }
+        }
+
+        // Branch filter
+        if ($branch !== null && $branch !== '') {
+            $query->where('center_id', $branch);
+        }
+
+        // Division filter
+        if ($division !== null && $division !== '') {
+            $query->where('department_id', $division);
         }
 
         $employees = $query->orderBy('first_name')->paginate(20);
@@ -78,10 +99,13 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
         }
 
+        // Updated stats with more granular status counts
         $stats = [
             'total' => Employee::count(),
-            'active' => Employee::where('is_active', true)->count(),
-            'inactive' => Employee::where('is_active', false)->count(),
+            'active' => Employee::where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
+            'terminated' => Employee::where('is_active', false)->count(),
+            'probation' => Employee::where('employment_status', 'Probation')->count(),
+            'on_leave' => Employee::whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
         ];
 
         return Inertia::render('Employees/Index', [
@@ -94,9 +118,11 @@ class EmployeeController extends Controller
                 'search' => $search,
                 'status' => $status,
                 'branch' => $branch,
+                'division' => $division,
             ],
         ]);
     }
+
 
     public function create()
     {

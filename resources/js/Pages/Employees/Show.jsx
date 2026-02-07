@@ -1361,9 +1361,28 @@ export default function EmployeeShow({
                         )}
                     </div>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-red-600">
-                            {employee.first_name} {employee.last_name || ''}
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {employee.first_name} {employee.last_name || ''}
+                            </h1>
+                            {/* Status Badge */}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${!employee.is_active
+                                    ? 'bg-red-100 text-red-700'
+                                    : employee.employment_status === 'Probation'
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : ['Sick', 'Leave', 'Permission', 'Business Trip'].includes(employee.employment_status)
+                                            ? 'bg-yellow-100 text-yellow-700'
+                                            : 'bg-green-100 text-green-700'
+                                }`}>
+                                {!employee.is_active
+                                    ? 'Terminated'
+                                    : employee.employment_status === 'Probation'
+                                        ? 'Probation'
+                                        : ['Sick', 'Leave', 'Permission', 'Business Trip'].includes(employee.employment_status)
+                                            ? employee.employment_status
+                                            : 'Active'}
+                            </span>
+                        </div>
                         <p className="text-sm text-gray-500">
                             {employee.timeline?.position?.name || employee.contract?.name || 'Staff'}
                         </p>

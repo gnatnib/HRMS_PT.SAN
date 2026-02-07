@@ -6,14 +6,27 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || '');
     const [branch, setBranch] = useState(filters.branch || '');
+    const [division, setDivision] = useState(filters.division || '');
     const [showing, setShowing] = useState(10);
 
     const employeeList = employees.data || [];
 
-    const demoStats = {
+    const employeeStats = {
         total: stats.total || 0,
         active: stats.active || 0,
-        inactive: stats.inactive || 0,
+        terminated: stats.terminated || 0,
+        probation: stats.probation || 0,
+        on_leave: stats.on_leave || 0,
+    };
+
+    // Get name color based on employee status
+    const getEmployeeNameColor = (emp) => {
+        if (!emp.is_active) return 'text-red-600 hover:text-red-800'; // Terminated
+        if (emp.employment_status === 'Probation') return 'text-blue-600 hover:text-blue-800'; // Probation
+        if (['Sick', 'Leave', 'Permission', 'Business Trip'].includes(emp.employment_status)) {
+            return 'text-yellow-600 hover:text-yellow-800'; // On Leave
+        }
+        return 'text-green-600 hover:text-green-800'; // Active
     };
 
     const handleSearch = () => {
@@ -93,28 +106,46 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                 value={status}
                                 onChange={(e) => {
                                     setStatus(e.target.value);
-                                    router.get('/employees', { search, status: e.target.value, branch }, { preserveState: true });
+                                    router.get('/employees', { search, status: e.target.value, branch, division }, { preserveState: true });
                                 }}
                                 className="form-input min-w-[150px]"
                             >
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="terminated">Terminated</option>
+                                <option value="probation">Probation</option>
+                                <option value="on_leave">On Leave / Sick</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-500 mb-1">Select Branch</label>
+                            <label className="block text-xs text-gray-500 mb-1">Branch</label>
                             <select
                                 value={branch}
                                 onChange={(e) => {
                                     setBranch(e.target.value);
-                                    router.get('/employees', { search, status, branch: e.target.value }, { preserveState: true });
+                                    router.get('/employees', { search, status, branch: e.target.value, division }, { preserveState: true });
                                 }}
                                 className="form-input min-w-[180px]"
                             >
                                 <option value="">All Branch</option>
                                 {centers.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Division</label>
+                            <select
+                                value={division}
+                                onChange={(e) => {
+                                    setDivision(e.target.value);
+                                    router.get('/employees', { search, status, branch, division: e.target.value }, { preserveState: true });
+                                }}
+                                className="form-input min-w-[180px]"
+                            >
+                                <option value="">All Division</option>
+                                {departments.map((d) => (
+                                    <option key={d.id} value={d.id}>{d.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -216,7 +247,7 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                                             <td className="px-4 py-3">
                                                 <Link
                                                     href={`/employees/${emp.id}`}
-                                                    className="text-red-600 hover:text-red-800 font-medium"
+                                                    className={`${getEmployeeNameColor(emp)} font-medium`}
                                                 >
                                                     {emp.first_name} {emp.last_name || ''}
                                                 </Link>
@@ -306,18 +337,26 @@ export default function EmployeesIndex({ auth, employees = {}, departments = [],
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid md:grid-cols-3 gap-4">
-                    <div className="widget-card text-center">
-                        <p className="text-3xl font-bold text-gray-900">{demoStats.total}</p>
-                        <p className="text-sm text-gray-500">Total Employees</p>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="widget-card text-center py-4">
+                        <p className="text-2xl font-bold text-gray-900">{employeeStats.total}</p>
+                        <p className="text-xs text-gray-500">Total</p>
                     </div>
-                    <div className="widget-card text-center">
-                        <p className="text-3xl font-bold text-green-600">{demoStats.active}</p>
-                        <p className="text-sm text-gray-500">Active</p>
+                    <div className="widget-card text-center py-4">
+                        <p className="text-2xl font-bold text-green-600">{employeeStats.active}</p>
+                        <p className="text-xs text-gray-500">Active</p>
                     </div>
-                    <div className="widget-card text-center">
-                        <p className="text-3xl font-bold text-red-600">{demoStats.inactive}</p>
-                        <p className="text-sm text-gray-500">Inactive</p>
+                    <div className="widget-card text-center py-4">
+                        <p className="text-2xl font-bold text-red-600">{employeeStats.terminated}</p>
+                        <p className="text-xs text-gray-500">Terminated</p>
+                    </div>
+                    <div className="widget-card text-center py-4">
+                        <p className="text-2xl font-bold text-blue-600">{employeeStats.probation}</p>
+                        <p className="text-xs text-gray-500">Probation</p>
+                    </div>
+                    <div className="widget-card text-center py-4">
+                        <p className="text-2xl font-bold text-yellow-600">{employeeStats.on_leave}</p>
+                        <p className="text-xs text-gray-500">On Leave</p>
                     </div>
                 </div>
             </div>

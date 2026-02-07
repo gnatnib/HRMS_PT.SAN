@@ -351,7 +351,8 @@ export default function Dashboard({
 
 // Employment Status Card Component
 function EmploymentStatusCard({ data }) {
-    const colors = ['#3B82F6', '#F59E0B', '#8B5CF6'];
+    // Fallback colors if not provided in data
+    const fallbackColors = ['#22C55E', '#EF4444', '#3B82F6', '#EAB308'];
 
     return (
         <div className="stats-card">
@@ -368,7 +369,7 @@ function EmploymentStatusCard({ data }) {
                         className="progress-bar-fill"
                         style={{
                             width: `${item.percentage}%`,
-                            backgroundColor: colors[index % colors.length],
+                            backgroundColor: item.color || fallbackColors[index % fallbackColors.length],
                         }}
                     />
                 ))}
@@ -389,7 +390,7 @@ function EmploymentStatusCard({ data }) {
                         <div className="flex items-center gap-2">
                             <div
                                 className="w-3 h-3 rounded-sm"
-                                style={{ backgroundColor: colors[index % colors.length] }}
+                                style={{ backgroundColor: item.color || fallbackColors[index % fallbackColors.length] }}
                             />
                             <span className="text-gray-600">{item.name}</span>
                         </div>

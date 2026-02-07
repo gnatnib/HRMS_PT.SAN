@@ -72,30 +72,45 @@ class DashboardController extends Controller
 
     private function getEmploymentStatus(): array
     {
-        $contracts = Contract::withCount('employees')->get();
         $total = Employee::count();
 
-        $data = [];
-        foreach ($contracts as $contract) {
-            $data[] = [
-                'name' => $contract->name,
-                'count' => $contract->employees_count,
-                'percentage' => $total > 0 ? round(($contract->employees_count / $total) * 100, 1) : 0,
-            ];
-        }
+        // Calculate actual status counts
+        $activeCount = Employee::where('is_active', true)
+            ->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])
+            ->count();
+        $terminatedCount = Employee::where('is_active', false)->count();
+        $probationCount = Employee::where('employment_status', 'Probation')->count();
+        $onLeaveCount = Employee::whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip'])->count();
 
-        // If no contracts exist, provide dummy data
-        if (empty($data)) {
-            $data = [
-                ['name' => 'Permanent', 'count' => 8, 'percentage' => 61.5],
-                ['name' => 'Contract', 'count' => 4, 'percentage' => 30.8],
-                ['name' => 'Probation', 'count' => 1, 'percentage' => 7.7],
-            ];
-            $total = 13;
-        }
+        $data = [
+            [
+                'name' => 'Active',
+                'count' => $activeCount,
+                'percentage' => $total > 0 ? round(($activeCount / $total) * 100, 1) : 0,
+                'color' => '#22C55E', // green
+            ],
+            [
+                'name' => 'Terminated',
+                'count' => $terminatedCount,
+                'percentage' => $total > 0 ? round(($terminatedCount / $total) * 100, 1) : 0,
+                'color' => '#EF4444', // red
+            ],
+            [
+                'name' => 'Probation',
+                'count' => $probationCount,
+                'percentage' => $total > 0 ? round(($probationCount / $total) * 100, 1) : 0,
+                'color' => '#3B82F6', // blue
+            ],
+            [
+                'name' => 'On Leave',
+                'count' => $onLeaveCount,
+                'percentage' => $total > 0 ? round(($onLeaveCount / $total) * 100, 1) : 0,
+                'color' => '#EAB308', // yellow
+            ],
+        ];
 
         return [
-            'total' => $total ?: 13,
+            'total' => $total,
             'data' => $data,
         ];
     }

@@ -64,7 +64,9 @@ class EmployeeController extends Controller
             } elseif ($status === 'probation') {
                 $query->where('employment_status', 'Probation');
             } elseif ($status === 'on_leave') {
-                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip']);
+                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission']);
+            } elseif ($status === 'business_trip') {
+                $query->where('employment_status', 'Business Trip');
             }
         }
 
@@ -99,13 +101,29 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
         }
 
-        // Updated stats with more granular status counts
+        // Stats — computed based on current filters (except status filter)
+        $statsQuery = Employee::query();
+        if ($search) {
+            $statsQuery->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+        if ($branch !== null && $branch !== '') {
+            $statsQuery->where('center_id', $branch);
+        }
+        if ($division !== null && $division !== '') {
+            $statsQuery->where('department_id', $division);
+        }
+
         $stats = [
-            'total' => Employee::count(),
-            'active' => Employee::where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
-            'terminated' => Employee::where('is_active', false)->count(),
-            'probation' => Employee::where('employment_status', 'Probation')->count(),
-            'on_leave' => Employee::whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
+            'total' => (clone $statsQuery)->count(),
+            'active' => (clone $statsQuery)->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
+            'terminated' => (clone $statsQuery)->where('is_active', false)->count(),
+            'probation' => (clone $statsQuery)->where('employment_status', 'Probation')->count(),
+            'on_leave' => (clone $statsQuery)->whereIn('employment_status', ['Sick', 'Leave', 'Permission'])->count(),
+            'business_trip' => (clone $statsQuery)->where('employment_status', 'Business Trip')->count(),
         ];
 
         return Inertia::render('Employees/Index', [
@@ -424,10 +442,47 @@ class EmployeeController extends Controller
 
     public function export(Request $request)
     {
-        $employees = Employee::with(['contract'])->get();
+        $query = Employee::with(['contract', 'department', 'center', 'position']);
+
+        $search = $request->get('search');
+        $status = $request->get('status');
+        $branch = $request->get('branch');
+        $division = $request->get('division');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+
+        if ($status !== null && $status !== '') {
+            if ($status === 'active') {
+                $query->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip']);
+            } elseif ($status === 'terminated') {
+                $query->where('is_active', false);
+            } elseif ($status === 'probation') {
+                $query->where('employment_status', 'Probation');
+            } elseif ($status === 'on_leave') {
+                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission']);
+            } elseif ($status === 'business_trip') {
+                $query->where('employment_status', 'Business Trip');
+            }
+        }
+
+        if ($branch !== null && $branch !== '') {
+            $query->where('center_id', $branch);
+        }
+
+        if ($division !== null && $division !== '') {
+            $query->where('department_id', $division);
+        }
+
+        $employees = $query->get();
 
         $csvData = [];
-        $csvData[] = ['Employee ID', 'Name', 'Phone', 'Email', 'Contract', 'Basic Salary', 'Status'];
+        $csvData[] = ['Employee ID', 'Name', 'Phone', 'Email', 'Division', 'Branch', 'Job Position', 'Job Level', 'Basic Salary', 'Status'];
 
         foreach ($employees as $emp) {
             $csvData[] = [
@@ -435,9 +490,12 @@ class EmployeeController extends Controller
                 $emp->first_name . ' ' . $emp->last_name,
                 $emp->mobile_number ?? '-',
                 $emp->email ?? '-',
+                $emp->department?->name ?? '-',
+                $emp->center?->name ?? '-',
+                $emp->position?->name ?? '-',
                 $emp->contract?->name ?? '-',
                 $emp->basic_salary ?? 0,
-                $emp->is_active ? 'Active' : 'Inactive',
+                $emp->is_active ? ($emp->employment_status ?? 'Active') : 'Terminated',
             ];
         }
 
@@ -453,5 +511,24 @@ class EmployeeController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return redirect()->route('employees.index')->with('error', 'Tidak ada karyawan yang dipilih.');
+        }
+
+        $employees = Employee::whereIn('id', $ids)->get();
+        foreach ($employees as $employee) {
+            if ($employee->profile_photo_path) {
+                Storage::disk('public')->delete($employee->profile_photo_path);
+            }
+            $employee->delete();
+        }
+
+        return redirect()->route('employees.index')->with('success', count($ids) . ' karyawan berhasil dihapus.');
     }
 }

@@ -46144,7 +46144,7 @@
                       this.window = null;
                       /* Sliding window. Input bytes are read into the second half of the window,
                        * and move to the first half later to keep a dictionary of at least wSize
-                       * bytes. With this division, matches are limited to a distance of
+                       * bytes. With this organization, matches are limited to a distance of
                        * wSize-MAX_MATCH bytes, but this ensures that IO is always
                        * performed with a length multiple of the block size.
                        */
@@ -75454,7 +75454,7 @@
                     // calculates ECC code words for given code words and generator polynomial.
                     //
                     // this is quite similar to CRC calculation as both Reed-Solomon and CRC use
-                    // the certain kind of cyclic codes, which is effectively the division of
+                    // the certain kind of cyclic codes, which is effectively the organization of
                     // zero-augumented polynomial by the generator polynomial. the only difference
                     // is that Reed-Solomon uses GF(2^8), instead of CRC's GF(2), and Reed-Solomon
                     // uses the different generator polynomial than CRC's.

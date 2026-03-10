@@ -16,7 +16,6 @@ export default function EmployeeShow({
     const [activeSubTab, setActiveSubTab] = useState('employment');
     const [isEditing, setIsEditing] = useState(false);
 
-    // Form for editing employee data - includes ALL fields
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         // Employment Data
@@ -216,43 +215,9 @@ export default function EmployeeShow({
         setEditableWorkExperience(editableWorkExperience.filter((_, i) => i !== index));
     };
 
-    // Tabs configuration
+    // Tabs configuration — simplified to General Info only
     const mainTabs = [
         { id: 'general', name: 'GENERAL INFO', icon: '✏️' },
-        { id: 'payroll', name: 'PAYROLL', icon: '💰' },
-        {
-            id: 'timemanagement',
-            name: 'TIME MANAGEMENT',
-            icon: '⏰',
-            dropdown: true,
-            items: [
-                { id: 'timeoff', name: 'Time Off' },
-                { id: 'attendance', name: 'Attendance' },
-                { id: 'overtime', name: 'Overtime' },
-            ]
-        },
-        {
-            id: 'finance',
-            name: 'FINANCE',
-            icon: '💳',
-            dropdown: true,
-            items: [
-                { id: 'reimbursement', name: 'Reimbursement' },
-                { id: 'cashadvance', name: 'Cash Advance' },
-                { id: 'loan', name: 'Loan' },
-            ]
-        },
-        { id: 'history', name: 'HISTORY', icon: '📋' },
-        {
-            id: 'more',
-            name: 'MORE',
-            icon: '📁',
-            dropdown: true,
-            items: [
-                { id: 'files', name: 'My Files' },
-                { id: 'assets', name: 'Assets' },
-            ]
-        },
     ];
 
     const generalSubTabs = [

@@ -842,7 +842,7 @@ return /******/ (function() { // webpackBootstrap
   	},
 
   	// @method divideBy(num: Number): Point
-  	// Returns the result of division of the current point by the given number.
+  	// Returns the result of organization of the current point by the given number.
   	divideBy: function (num) {
   		return this.clone()._divideBy(num);
   	},

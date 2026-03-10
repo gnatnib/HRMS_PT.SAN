@@ -2,37 +2,16 @@ import { Link, usePage } from '@inertiajs/react';
 import { useState, Fragment } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 
-export default function MekariLayout({ children, user }) {
-    const { url } = usePage();
+export default function MekariLayout({ children, user: userProp }) {
+    const { url, props } = usePage();
+    const user = userProp || props.auth?.user;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const isAdmin = user?.role === 'direktur_utama' || user?.role === 'superadmin';
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', active: url === '/dashboard' },
         { name: 'Employees', href: '/employees', active: url.startsWith('/employees') },
-        {
-            name: 'Time Management',
-            href: '#',
-            dropdown: true,
-            active: url.startsWith('/attendance') || url.startsWith('/shifts') || url.startsWith('/overtime') || url.startsWith('/leave'),
-            items: [
-                { name: 'Clock In/Out', href: '/attendance/clock' },
-                { name: 'Shifts', href: '/shifts' },
-                { name: 'Overtime', href: '/overtime' },
-                { name: 'Leave', href: '/leave' },
-            ],
-        },
-        {
-            name: 'Finance',
-            href: '#',
-            dropdown: true,
-            active: url.startsWith('/finance') || url.startsWith('/reimbursement') || url.startsWith('/loans') || url.startsWith('/payroll'),
-            items: [
-                { name: 'Payroll', href: '/payroll' },
-                { name: 'Reimbursement', href: '/finance/reimbursement' },
-                { name: 'Cash Advance', href: '/finance/cash-advance' },
-                { name: 'Loans', href: '/loans' },
-            ],
-        },
         {
             name: 'Recruitment',
             href: '#',
@@ -43,19 +22,12 @@ export default function MekariLayout({ children, user }) {
                 { name: 'Onboarding', href: '/recruitment/onboarding' },
             ],
         },
-        {
-            name: 'Company',
-            href: '#',
-            dropdown: true,
-            active: url.startsWith('/documents') || url.startsWith('/assets') || url.startsWith('/analytics') || url.startsWith('/performance') || url.startsWith('/company'),
-            items: [
-                { name: 'Documents', href: '/documents' },
-                { name: 'Assets', href: '/assets' },
-                { name: 'Announcements', href: '/company/announcements' },
-                { name: 'Analytics', href: '/analytics' },
-                { name: 'Performance', href: '/performance' },
-            ],
-        },
+        // User Management - only for Direktur Utama and Superadmin
+        ...(isAdmin ? [{
+            name: 'User Management',
+            href: '/users',
+            active: url.startsWith('/users'),
+        }] : []),
     ];
 
     return (

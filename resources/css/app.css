@@ -36,7 +36,6 @@
     }
 }
 
-/* Sidebar styles for Mekari Talenta-like design */
 @layer components {
     .sidebar {
         @apply fixed top-0 left-0 z-40 flex flex-col w-64 h-screen bg-primary-900;

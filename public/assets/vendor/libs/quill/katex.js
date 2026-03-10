@@ -9570,7 +9570,7 @@ var makeLeftRightDelim = function makeLeftRightDelim(delim, height, depth, optio
   var delimiterExtend = 5.0 / options.fontMetrics().ptPerEm;
   var maxDistFromAxis = Math.max(height - axisHeight, depth + axisHeight);
   var totalHeight = Math.max( // In real TeX, calculations are done using integral values which are
-  // 65536 per pt, or 655360 per em. So, the division here truncates in
+  // 65536 per pt, or 655360 per em. So, the organization here truncates in
   // TeX but doesn't here, producing different results. If we wanted to
   // exactly match TeX's calculation, we could do
   //   Math.floor(655360 * maxDistFromAxis / 500) *

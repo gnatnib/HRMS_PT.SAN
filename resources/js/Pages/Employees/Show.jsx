@@ -8,7 +8,6 @@ export default function EmployeeShow({
     employee,
     departments = [],
     positions = [],
-    contracts = [],
     centers = [],
     flash
 }) {
@@ -16,19 +15,24 @@ export default function EmployeeShow({
     const [activeSubTab, setActiveSubTab] = useState('employment');
     const [isEditing, setIsEditing] = useState(false);
 
-    // Form for editing employee data - includes ALL fields
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
         // Employment Data
         employee_code: employee.employee_code || '',
         barcode: employee.barcode || '',
-        organization_id: employee.organization_id || employee.timeline?.department?.id || '',
-        position_id: employee.position_id || employee.timeline?.position?.id || '',
-        employment_status: employee.employment_status || 'Permanent',
+        center_id: employee.center_id || '',
+        position_id: employee.position_id || '',
+        employee_status: (() => {
+            if (!employee.is_active) return 'Tidak Aktif';
+            const es = employee.employment_status;
+            if (es === 'Leave' || es === 'Sick' || es === 'Permission') return 'Cuti';
+            if (es === 'Business Trip') return 'Dinas Luar';
+            if (es === 'Probation') return 'Masa Percobaan';
+            if (es === 'Terminated') return 'Tidak Aktif';
+            return 'Aktif';
+        })(),
         department_id: employee.department_id || '',
         join_date: employee.join_date || '',
-        contract_id: employee.contract_id || '',
-        center_id: employee.timeline?.center?.id || '',
 
         // Personal Data
         first_name: employee.first_name || '',
@@ -51,27 +55,18 @@ export default function EmployeeShow({
         ptkp_status: employee.ptkp_status || 'TK/0',
         tax_configuration: employee.tax_configuration || 'Gross',
         prorate_type: employee.prorate_type || 'Based on Working Day',
-        count_national_holiday: employee.count_national_holiday || false,
+        count_holiday_as_working_day: employee.count_holiday_as_working_day || false,
         salary_type: employee.salary_type || 'Monthly',
         salary_configuration: employee.salary_configuration || 'Taxable',
         taxable_date: employee.taxable_date || '',
-        overtime_status: employee.overtime_status || 'Eligible',
-        employee_tax_status: employee.employee_tax_status || 'Pegawai Tetap',
-        jht_configuration: employee.jht_configuration || 'Default',
-        bpjs_kesehatan_config: employee.bpjs_kesehatan_config || 'By Company',
-        jaminan_pensiun_config: employee.jaminan_pensiun_config || 'Default',
-        npp_bpjs_ketenagakerjaan: employee.npp_bpjs_ketenagakerjaan || 'Default',
         bpjs_ketenagakerjaan: employee.bpjs_ketenagakerjaan || '',
         bpjs_kesehatan: employee.bpjs_kesehatan || '',
         bpjs_kesehatan_family: employee.bpjs_kesehatan_family || '0',
         npwp: employee.npwp || '',
         currency: employee.currency || 'IDR',
-        beginning_netto: employee.beginning_netto || 0,
-        pph21_paid: employee.pph21_paid || 0,
         bpjs_ketenagakerjaan_date: employee.bpjs_ketenagakerjaan_date || '',
         bpjs_kesehatan_date: employee.bpjs_kesehatan_date || '',
         jaminan_pensiun_date: employee.jaminan_pensiun_date || '',
-        payroll_components: employee.payroll_components || [],
 
         // Bank Info
         bank_name: employee.bank_name || '',
@@ -84,16 +79,44 @@ export default function EmployeeShow({
     });
 
     // Options arrays
-    const employmentStatuses = ['Permanent', 'Contract', 'Probation', 'Intern'];
+    const employeeStatusOptions = [
+        { value: 'Aktif', label: 'Aktif' },
+        { value: 'Tidak Aktif', label: 'Tidak Aktif' },
+        { value: 'Cuti', label: 'Cuti' },
+        { value: 'Dinas Luar', label: 'Dinas Luar' },
+        { value: 'Masa Percobaan', label: 'Masa Percobaan' },
+    ];
     const ptkpOptions = ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3'];
-    const taxConfigs = ['Gross', 'Gross Up', 'Nett'];
-    const salaryTypes = ['Monthly', 'Hourly', 'Daily'];
-    const prorateTypes = ['Based on Working Day', 'Based on Calendar Day', 'Custom on Working Day', 'Custom on Calendar Day'];
+    const taxConfigs = [
+        { value: 'Gross', label: 'Gross' },
+        { value: 'Gross Up', label: 'Gross Up' },
+        { value: 'Nett', label: 'Net' },
+    ];
+    const salaryTypes = [
+        { value: 'Monthly', label: 'Bulanan' },
+        { value: 'Hourly', label: 'Per Jam' },
+        { value: 'Daily', label: 'Harian' },
+    ];
+    const prorateTypes = [
+        { value: 'Based on Working Day', label: 'Berdasarkan Hari Kerja' },
+        { value: 'Based on Calendar Day', label: 'Berdasarkan Hari Kalender' },
+        { value: 'Custom on Working Day', label: 'Kustom Hari Kerja' },
+        { value: 'Custom on Calendar Day', label: 'Kustom Hari Kalender' },
+    ];
     const bpjsFamilyOptions = ['0', '1', '2', '3', '4', '5'];
     const currencyOptions = ['IDR', 'USD', 'SGD'];
+    const salaryConfigurationOptions = [
+        { value: 'Taxable', label: 'Kena Pajak' },
+        { value: 'Non Taxable', label: 'Tidak Kena Pajak' },
+    ];
+    const currencyOptionLabels = {
+        IDR: 'Rupiah (IDR)',
+        USD: 'US Dollar (USD)',
+        SGD: 'Singapore Dollar (SGD)',
+    };
 
     // Relationship options
-    const relationshipOptions = ['Father', 'Mother', 'Spouse', 'Child', 'Sibling', 'Brother', 'Sister', 'Other'];
+    const relationshipOptions = ['Ayah', 'Ibu', 'Pasangan', 'Anak', 'Saudara', 'Kakak', 'Adik', 'Lainnya'];
     const educationLevels = ['SD', 'SMP', 'SMA/SMK', 'D1', 'D2', 'D3', 'S1/D4', 'S2', 'S3'];
 
     // Editable state for Family, Emergency, Education when editing (must be declared before handleSave uses them)
@@ -123,7 +146,7 @@ export default function EmployeeShow({
     const addFamilyMember = () => {
         setEditableFamilyMembers([...editableFamilyMembers, {
             full_name: '',
-            relationship: 'Father',
+            relationship: 'Ayah',
             birth_date: '',
             id_number: '',
             gender: 'male',
@@ -143,7 +166,7 @@ export default function EmployeeShow({
     const addEmergencyContact = () => {
         setEditableEmergencyContacts([...editableEmergencyContacts, {
             name: '',
-            relationship: 'Father',
+            relationship: 'Ayah',
             phone: ''
         }]);
     };
@@ -217,51 +240,18 @@ export default function EmployeeShow({
         setEditableWorkExperience(editableWorkExperience.filter((_, i) => i !== index));
     };
 
-    // Tabs configuration
+    // Tabs configuration — simplified to General Info only
     const mainTabs = [
-        { id: 'general', name: 'GENERAL INFO', icon: '✏️' },
-        { id: 'payroll', name: 'PAYROLL', icon: '💰' },
-        {
-            id: 'timemanagement',
-            name: 'TIME MANAGEMENT',
-            icon: '⏰',
-            dropdown: true,
-            items: [
-                { id: 'timeoff', name: 'Time Off' },
-                { id: 'attendance', name: 'Attendance' },
-                { id: 'overtime', name: 'Overtime' },
-            ]
-        },
-        {
-            id: 'finance',
-            name: 'FINANCE',
-            icon: '💳',
-            dropdown: true,
-            items: [
-                { id: 'reimbursement', name: 'Reimbursement' },
-                { id: 'cashadvance', name: 'Cash Advance' },
-                { id: 'loan', name: 'Loan' },
-            ]
-        },
-        { id: 'history', name: 'HISTORY', icon: '📋' },
-        {
-            id: 'more',
-            name: 'MORE',
-            icon: '📁',
-            dropdown: true,
-            items: [
-                { id: 'files', name: 'My Files' },
-                { id: 'assets', name: 'Assets' },
-            ]
-        },
+        { id: 'general', name: 'GENERAL INFO', icon: '👤' },
+        { id: 'payroll', name: 'PAYROLL INFO', icon: '💰' },
     ];
 
     const generalSubTabs = [
-        { id: 'employment', name: 'EMPLOYMENT DATA' },
-        { id: 'personal', name: 'PERSONAL DATA' },
-        { id: 'family', name: 'FAMILY INFO' },
-        { id: 'education', name: 'EDUCATION INFO' },
-        { id: 'custom', name: 'CUSTOM FIELD INFO' },
+        { id: 'employment', name: 'DATA PEKERJAAN' },
+        { id: 'personal', name: 'DATA PRIBADI' },
+        { id: 'family', name: 'INFO KELUARGA' },
+        { id: 'education', name: 'INFO PENDIDIKAN' },
+        { id: 'custom', name: 'FIELD KUSTOM' },
     ];
 
     const identityTypes = ['KTP', 'SIM', 'Passport', 'KITAS', 'KITAP'];
@@ -290,7 +280,27 @@ export default function EmployeeShow({
         if (days < 0) { months--; days += 30; }
         if (months < 0) { years--; months += 12; }
 
-        return `${years} Year ${months} Month ${days} Day`;
+        return `${years} Tahun ${months} Bulan ${days} Hari`;
+    };
+
+    // Calculate work experience duration from start and end dates
+    const calculateWorkDuration = (fromDate, toDate) => {
+        if (!fromDate || !toDate) return '-';
+        const start = new Date(fromDate);
+        const end = new Date(toDate);
+
+        let years = end.getFullYear() - start.getFullYear();
+        let months = end.getMonth() - start.getMonth();
+
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+
+        if (years === 0) {
+            return `${months} Month${months !== 1 ? 's' : ''}`;
+        }
+        return `${years} Year${years !== 1 ? 's' : ''} ${months} Month${months !== 1 ? 's' : ''}`;
     };
 
     const handleDelete = () => {
@@ -303,7 +313,7 @@ export default function EmployeeShow({
     const familyMembers = employee.family_members || [];
     const emergencyContacts = employee.emergency_contacts || [];
     const trainingCourses = employee.training_courses || [];
-    const workExperiences = employee.work_experiences || [];
+    const workExperiences = employee.work_experience || [];
 
     const renderMainTabContent = () => {
         switch (activeTab) {
@@ -333,10 +343,10 @@ export default function EmployeeShow({
         <div className="space-y-6">
             <div>
                 <h2 className="text-2xl font-light text-gray-900 mb-2">
-                    Add, edit, or delete information about an employee
+                    Tambah, edit, atau hapus informasi karyawan
                 </h2>
                 <p className="text-sm text-gray-500">
-                    From personal data to employment information. Both you and your employee can access the page, but only you can make the final edit.
+                    Dari data pribadi hingga informasi ketenagakerjaan. Anda dan karyawan dapat mengakses halaman ini, namun hanya Anda yang dapat melakukan perubahan.
                 </p>
             </div>
 
@@ -348,8 +358,8 @@ export default function EmployeeShow({
                             key={tab.id}
                             onClick={() => setActiveSubTab(tab.id)}
                             className={`pb-3 text-sm font-medium transition-colors ${activeSubTab === tab.id
-                                    ? 'text-red-600 border-b-2 border-red-600'
-                                    : 'text-gray-500 hover:text-gray-700'
+                                ? 'text-red-600 border-b-2 border-red-600'
+                                : 'text-gray-500 hover:text-gray-700'
                                 }`}
                         >
                             {tab.name}
@@ -384,34 +394,34 @@ export default function EmployeeShow({
             <div className="grid md:grid-cols-2 gap-6">
                 {/* Company ID - Read Only */}
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">Company Id</label>
+                    <label className="block text-xs text-gray-500 mb-1">Perusahaan</label>
                     <p className="text-sm text-gray-900 border-b border-gray-200 pb-2 bg-gray-50 px-3 py-2 rounded">
                         PT. Sinergi Asta Nusantara
                     </p>
                 </div>
 
-                {/* Division - Dropdown */}
+                {/* Divisi - Dropdown */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                        Division<span className="text-red-500">*</span>
+                        Divisi<span className="text-red-500">*</span>
                     </label>
                     <select
-                        value={data.organization_id}
-                        onChange={(e) => setData('organization_id', e.target.value)}
+                        value={data.center_id}
+                        onChange={(e) => setData('center_id', e.target.value)}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
-                        <option value="">Select Organization</option>
-                        {departments.map((dept) => (
-                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        <option value="">Pilih Divisi</option>
+                        {centers.map((center) => (
+                            <option key={center.id} value={center.id}>{center.name}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Job Position - Dropdown */}
+                {/* Jabatan - Dropdown */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                        Job Position<span className="text-red-500">*</span>
+                        Jabatan<span className="text-red-500">*</span>
                     </label>
                     <select
                         value={data.position_id}
@@ -419,69 +429,50 @@ export default function EmployeeShow({
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
-                        <option value="">Select Position</option>
+                        <option value="">Pilih Jabatan</option>
                         {positions.map((pos) => (
                             <option key={pos.id} value={pos.id}>{pos.name}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Job Level - Dropdown */}
+                {/* Cabang - Dropdown */}
+                <div>
+                    <label className="block text-xs text-gray-500 mb-1">Cabang</label>
+                    <select
+                        value={data.department_id}
+                        onChange={(e) => setData('department_id', e.target.value)}
+                        className="form-input w-full"
+                        disabled={!isEditing}
+                    >
+                        <option value="">Pilih Cabang</option>
+                        {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>{dept.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Status Karyawan */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                        Job Level<span className="text-red-500">*</span>
+                        Status Karyawan<span className="text-red-500">*</span>
                     </label>
                     <select
-                        value={data.contract_id}
-                        onChange={(e) => setData('contract_id', e.target.value)}
+                        value={data.employee_status}
+                        onChange={(e) => setData('employee_status', e.target.value)}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
-                        <option value="">Select Level</option>
-                        {contracts.map((c) => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
+                        {employeeStatusOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Employment Status - Dropdown */}
+                {/* Tanggal Masuk */}
                 <div>
                     <label className="block text-xs text-gray-500 mb-1">
-                        Employment Status<span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        value={data.employment_status}
-                        onChange={(e) => setData('employment_status', e.target.value)}
-                        className="form-input w-full"
-                        disabled={!isEditing}
-                    >
-                        <option value="">Select Status</option>
-                        {employmentStatuses.map((status) => (
-                            <option key={status} value={status}>{status}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Branch - Dropdown */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Branch</label>
-                    <select
-                        value={data.center_id}
-                        onChange={(e) => setData('center_id', e.target.value)}
-                        className="form-input w-full"
-                        disabled={!isEditing}
-                    >
-                        <option value="">Select Branch</option>
-                        {centers.map((center) => (
-                            <option key={center.id} value={center.id}>{center.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Join Date */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">
-                        Join Date<span className="text-red-500">*</span>
+                        Tanggal Masuk<span className="text-red-500">*</span>
                     </label>
                     {isEditing ? (
                         <input
@@ -497,9 +488,9 @@ export default function EmployeeShow({
                     )}
                 </div>
 
-                {/* Length of Service - Calculated */}
+                {/* Masa Kerja - Calculated */}
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">Length of Service</label>
+                    <label className="block text-xs text-gray-500 mb-1">Masa Kerja</label>
                     <p className="text-sm text-gray-900 border-b border-gray-200 pb-2 bg-gray-50 px-3 py-2 rounded">
                         {calculateLengthOfService(employee.join_date)}
                     </p>
@@ -635,7 +626,7 @@ export default function EmployeeShow({
                     {isEditing ? (
                         <input type="date" value={data.birth_date} onChange={(e) => setData('birth_date', e.target.value)} className="form-input w-full border border-gray-300 rounded-lg px-3 py-2" />
                     ) : (
-                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.birth_date || '-'}</p>
+                        <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{formatDate(employee.birth_date)}</p>
                     )}
                 </div>
 
@@ -683,7 +674,7 @@ export default function EmployeeShow({
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-medium text-gray-900">Family Members</h3>
                         {isEditing && (
-                            <button 
+                            <button
                                 type="button"
                                 onClick={addFamilyMember}
                                 className="px-3 py-1.5 text-xs bg-red-600 text-white rounded hover:bg-red-700"
@@ -740,7 +731,7 @@ export default function EmployeeShow({
                                                         <option value="male">Male</option>
                                                         <option value="female">Female</option>
                                                     </select>
-                                                ) : member.gender || '-'}
+                                                ) : (member.gender ? member.gender.charAt(0).toUpperCase() + member.gender.slice(1) : '-')}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 {isEditing ? (
@@ -1068,7 +1059,7 @@ export default function EmployeeShow({
                                                     <input type="date" value={exp.to} onChange={(e) => updateWorkExperience(idx, 'to', e.target.value)} className="form-input text-sm py-1 border border-gray-300 rounded px-2" />
                                                 ) : exp.to || exp.to_date || '-'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm">{exp.length_of_service || '-'}</td>
+                                            <td className="px-4 py-3 text-sm">{calculateWorkDuration(exp.from, exp.to)}</td>
                                             {isEditing && (
                                                 <td className="px-4 py-3 text-sm">
                                                     <button type="button" onClick={() => removeWorkExperience(idx)} className="text-red-600 hover:text-red-800">
@@ -1098,122 +1089,200 @@ export default function EmployeeShow({
     const renderPayrollInfo = () => (
         <div className="space-y-6">
             <div>
-                <h2 className="text-2xl font-light text-gray-900 mb-2">
-                    {employee.first_name}'s Payroll Info
-                </h2>
+                <h2 className="text-2xl font-light text-gray-900 mb-2">Info penggajian karyawan</h2>
+                <p className="text-sm text-gray-500">Ringkasan gaji, pajak, BPJS, dan rekening bank untuk karyawan ini.</p>
             </div>
 
-            {/* Basic Salary */}
-            <div className="mb-6">
-                <p className="text-sm text-gray-500">Basic Salary</p>
-                {isEditing ? (
-                    <input
-                        type="number"
-                        value={data.basic_salary}
-                        onChange={(e) => setData('basic_salary', e.target.value)}
-                        className="form-input text-2xl font-bold w-full"
-                        min="0"
-                    />
-                ) : (
-                    <span className="text-3xl font-bold text-gray-900">
-                        Rp {formatCurrency(employee.basic_salary)}
-                    </span>
-                )}
+            <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-slate-50 to-white p-5 shadow-sm">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p className="text-sm font-medium text-gray-500">Gaji Pokok</p>
+                        {isEditing ? (
+                            <input
+                                type="number"
+                                value={data.basic_salary}
+                                onChange={(e) => setData('basic_salary', e.target.value)}
+                                className="form-input mt-2 w-full md:w-56"
+                                min="0"
+                                placeholder="Masukkan nominal"
+                            />
+                        ) : (
+                            <span className="mt-1 block text-3xl font-bold text-gray-900">
+                                Rp {formatCurrency(employee.basic_salary)}
+                            </span>
+                        )}
+                    </div>
+                    <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-gray-200">
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Status PTKP</p>
+                        {isEditing ? (
+                            <select value={data.ptkp_status} onChange={(e) => setData('ptkp_status', e.target.value)} className="form-input mt-2 min-w-40">
+                                {ptkpOptions.map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <p className="mt-1 text-lg font-semibold text-gray-900">{employee.ptkp_status || 'TK/0'}</p>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
-                {/* PTKP Status */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">PTKP Status</label>
-                    {isEditing ? (
-                        <select value={data.ptkp_status} onChange={(e) => setData('ptkp_status', e.target.value)} className="form-input w-full">
-                            {ptkpOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.ptkp_status || 'TK/0'}</p>}
-                </div>
-                {/* Tax Configuration */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Tax Configuration</label>
-                    {isEditing ? (
+                <EditableInfoField
+                    label="Konfigurasi Pajak"
+                    isEditing={isEditing}
+                    displayValue={employee.tax_configuration || 'Gross'}
+                    input={
                         <select value={data.tax_configuration} onChange={(e) => setData('tax_configuration', e.target.value)} className="form-input w-full">
-                            {taxConfigs.map(o => <option key={o} value={o}>{o}</option>)}
+                            {taxConfigs.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
-                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.tax_configuration || 'Gross'}</p>}
-                </div>
-                {/* Prorate Type */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Prorate Type</label>
-                    {isEditing ? (
+                    }
+                />
+                <EditableInfoField
+                    label="Tipe Prorata"
+                    isEditing={isEditing}
+                    displayValue={employee.prorate_type || 'Based on Working Day'}
+                    input={
                         <select value={data.prorate_type} onChange={(e) => setData('prorate_type', e.target.value)} className="form-input w-full">
-                            {prorateTypes.map(o => <option key={o} value={o}>{o}</option>)}
+                            {prorateTypes.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
-                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.prorate_type || 'Based on Working Day'}</p>}
-                </div>
-                {/* Salary Type */}
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Salary Type</label>
-                    {isEditing ? (
+                    }
+                />
+                <EditableInfoField
+                    label="Tipe Gaji"
+                    isEditing={isEditing}
+                    displayValue={employee.salary_type || 'Monthly'}
+                    input={
                         <select value={data.salary_type} onChange={(e) => setData('salary_type', e.target.value)} className="form-input w-full">
-                            {salaryTypes.map(o => <option key={o} value={o}>{o}</option>)}
+                            {salaryTypes.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
-                    ) : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{employee.salary_type || 'Monthly'}</p>}
-                </div>
-
-                {/* Checkbox */}
-                <div className="md:col-span-2">
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
+                    }
+                />
+                <EditableInfoField
+                    label="Konfigurasi Gaji"
+                    isEditing={isEditing}
+                    displayValue={employee.salary_configuration || 'Taxable'}
+                    input={
+                        <select value={data.salary_configuration} onChange={(e) => setData('salary_configuration', e.target.value)} className="form-input w-full">
+                            {salaryConfigurationOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                        </select>
+                    }
+                />
+                <EditableInfoField
+                    label="Tanggal Mulai Pajak"
+                    isEditing={isEditing}
+                    displayValue={formatDate(employee.taxable_date)}
+                    input={<input type="date" value={data.taxable_date} onChange={(e) => setData('taxable_date', e.target.value)} className="form-input w-full" />}
+                />
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <label className="flex items-start gap-3 text-sm text-gray-700">
                         <input
                             type="checkbox"
-                            checked={isEditing ? data.count_national_holiday : employee.count_national_holiday}
-                            onChange={(e) => setData('count_national_holiday', e.target.checked)}
+                            checked={isEditing ? data.count_holiday_as_working_day : employee.count_holiday_as_working_day}
+                            onChange={(e) => setData('count_holiday_as_working_day', e.target.checked)}
                             disabled={!isEditing}
-                            className="rounded border-gray-300"
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                         />
-                        Count national holiday as a working day
+                        <span>Hitung hari libur nasional sebagai hari kerja</span>
                     </label>
                 </div>
-
-                <InfoField label="Overtime Status" value={employee.overtime_status || 'Eligible'} />
-                <InfoField label="Employee Tax Status" value={employee.employee_tax_status || 'Pegawai Tetap'} />
-                <InfoField label="JHT Configuration" value={employee.jht_configuration || 'Default'} />
-                <InfoField label="BPJS Kesehatan Configuration" value={employee.bpjs_kesehatan_config || 'By Company'} />
-                <InfoField label="Jaminan Pensiun Configuration" value={employee.jaminan_pensiun_config || 'Default'} />
-                <InfoField label="NPP BPJS Ketenagakerjaan" value={employee.npp_bpjs_ketenagakerjaan || 'Default'} />
             </div>
 
-            {/* Bank Info */}
-            <div className="pt-6 border-t">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Bank Information</h3>
+            <div className="rounded-2xl border border-gray-200 p-5">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Data BPJS & Pajak</h3>
                 <div className="grid md:grid-cols-3 gap-6">
-                    {isEditing ? (
-                        <>
-                            <div>
-                                <label className="block text-xs text-gray-500 mb-1">Bank Name</label>
-                                <select value={data.bank_name} onChange={(e) => setData('bank_name', e.target.value)} className="form-input w-full">
-                                    <option value="">Select Bank</option>
-                                    <option value="BCA">BCA</option>
-                                    <option value="Mandiri">Mandiri</option>
-                                    <option value="BNI">BNI</option>
-                                    <option value="BRI">BRI</option>
-                                    <option value="CIMB Niaga">CIMB Niaga</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs text-gray-500 mb-1">Account Number</label>
-                                <input type="text" value={data.bank_account_number} onChange={(e) => setData('bank_account_number', e.target.value)} className="form-input w-full" />
-                            </div>
-                            <div>
-                                <label className="block text-xs text-gray-500 mb-1">Account Holder</label>
-                                <input type="text" value={data.bank_account_holder} onChange={(e) => setData('bank_account_holder', e.target.value)} className="form-input w-full" />
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <InfoField label="Bank Name" value={employee.bank_name || '-'} />
-                            <InfoField label="Account Number" value={employee.bank_account_number || '-'} />
-                            <InfoField label="Account Holder" value={employee.bank_account_holder || '-'} />
-                        </>
-                    )}
+                    <EditableInfoField
+                        label="BPJS Ketenagakerjaan"
+                        isEditing={isEditing}
+                        displayValue={employee.bpjs_ketenagakerjaan || '-'}
+                        input={<input type="text" value={data.bpjs_ketenagakerjaan} onChange={(e) => setData('bpjs_ketenagakerjaan', e.target.value)} className="form-input w-full" placeholder="Masukkan nomor BPJS Ketenagakerjaan" />}
+                    />
+                    <EditableInfoField
+                        label="BPJS Kesehatan"
+                        isEditing={isEditing}
+                        displayValue={employee.bpjs_kesehatan || '-'}
+                        input={<input type="text" value={data.bpjs_kesehatan} onChange={(e) => setData('bpjs_kesehatan', e.target.value)} className="form-input w-full" placeholder="Masukkan nomor BPJS Kesehatan" />}
+                    />
+                    <EditableInfoField
+                        label="Jumlah Keluarga BPJS Kesehatan"
+                        isEditing={isEditing}
+                        displayValue={employee.bpjs_kesehatan_family || '0'}
+                        input={
+                            <select value={data.bpjs_kesehatan_family} onChange={(e) => setData('bpjs_kesehatan_family', e.target.value)} className="form-input w-full">
+                                {bpjsFamilyOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                            </select>
+                        }
+                    />
+                    <EditableInfoField
+                        label="NPWP"
+                        isEditing={isEditing}
+                        displayValue={employee.npwp || '-'}
+                        input={<input type="text" value={data.npwp} onChange={(e) => setData('npwp', e.target.value)} className="form-input w-full" placeholder="00.000.000.0-000.000" />}
+                    />
+                    <EditableInfoField
+                        label="Mata Uang"
+                        isEditing={isEditing}
+                        displayValue={employee.currency || 'IDR'}
+                        input={
+                            <select value={data.currency} onChange={(e) => setData('currency', e.target.value)} className="form-input w-full">
+                                {currencyOptions.map((opt) => <option key={opt} value={opt}>{currencyOptionLabels[opt] || opt}</option>)}
+                            </select>
+                        }
+                    />
+                    <EditableInfoField
+                        label="Tanggal BPJS Ketenagakerjaan"
+                        isEditing={isEditing}
+                        displayValue={formatDate(employee.bpjs_ketenagakerjaan_date)}
+                        input={<input type="date" value={data.bpjs_ketenagakerjaan_date} onChange={(e) => setData('bpjs_ketenagakerjaan_date', e.target.value)} className="form-input w-full" />}
+                    />
+                    <EditableInfoField
+                        label="Tanggal BPJS Kesehatan"
+                        isEditing={isEditing}
+                        displayValue={formatDate(employee.bpjs_kesehatan_date)}
+                        input={<input type="date" value={data.bpjs_kesehatan_date} onChange={(e) => setData('bpjs_kesehatan_date', e.target.value)} className="form-input w-full" />}
+                    />
+                    <EditableInfoField
+                        label="Tanggal Jaminan Pensiun"
+                        isEditing={isEditing}
+                        displayValue={formatDate(employee.jaminan_pensiun_date)}
+                        input={<input type="date" value={data.jaminan_pensiun_date} onChange={(e) => setData('jaminan_pensiun_date', e.target.value)} className="form-input w-full" />}
+                    />
+                </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 p-5">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Informasi Bank</h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                    <EditableInfoField
+                        label="Nama Bank"
+                        isEditing={isEditing}
+                        displayValue={employee.bank_name || '-'}
+                        input={
+                            <select value={data.bank_name} onChange={(e) => setData('bank_name', e.target.value)} className="form-input w-full">
+                                <option value="">Pilih Bank</option>
+                                <option value="BCA">BCA</option>
+                                <option value="Mandiri">Mandiri</option>
+                                <option value="BNI">BNI</option>
+                                <option value="BRI">BRI</option>
+                                <option value="CIMB Niaga">CIMB Niaga</option>
+                                <option value="Danamon">Danamon</option>
+                                <option value="Permata">Permata</option>
+                                <option value="Other">Lainnya</option>
+                            </select>
+                        }
+                    />
+                    <EditableInfoField
+                        label="Nomor Rekening"
+                        isEditing={isEditing}
+                        displayValue={employee.bank_account_number || '-'}
+                        input={<input type="text" value={data.bank_account_number} onChange={(e) => setData('bank_account_number', e.target.value)} className="form-input w-full" placeholder="Masukkan nomor rekening" />}
+                    />
+                    <EditableInfoField
+                        label="Nama Pemilik Rekening"
+                        isEditing={isEditing}
+                        displayValue={employee.bank_account_holder || '-'}
+                        input={<input type="text" value={data.bank_account_holder} onChange={(e) => setData('bank_account_holder', e.target.value)} className="form-input w-full" placeholder="Masukkan nama sesuai rekening" />}
+                    />
                 </div>
             </div>
         </div>
@@ -1342,11 +1411,34 @@ export default function EmployeeShow({
                         )}
                     </div>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-red-600">
-                            {employee.first_name} {employee.last_name || ''}
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-gray-900">
+                                {employee.first_name} {employee.last_name || ''}
+                            </h1>
+                            {/* Status Badge */}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${!employee.is_active
+                                    ? 'bg-red-100 text-red-700'
+                                    : employee.employment_status === 'Probation'
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : employee.employment_status === 'Business Trip'
+                                            ? 'bg-teal-100 text-teal-700'
+                                            : ['Sick', 'Leave', 'Permission'].includes(employee.employment_status)
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-green-100 text-green-700'
+                                }`}>
+                                {!employee.is_active
+                                    ? 'Tidak Aktif'
+                                    : employee.employment_status === 'Probation'
+                                        ? 'Masa Percobaan'
+                                        : employee.employment_status === 'Business Trip'
+                                            ? 'Dinas Luar'
+                                            : ['Sick', 'Leave', 'Permission'].includes(employee.employment_status)
+                                                ? 'Cuti'
+                                                : 'Aktif'}
+                            </span>
+                        </div>
                         <p className="text-sm text-gray-500">
-                            {employee.timeline?.position?.name || employee.contract?.name || 'Staff'}
+                            {employee.timeline?.position?.name || employee.position?.name || 'Karyawan'}
                         </p>
                     </div>
                     {/* Edit/Save Buttons */}
@@ -1358,7 +1450,7 @@ export default function EmployeeShow({
                                     onClick={() => setIsEditing(false)}
                                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
                                 >
-                                    Cancel
+                                    Batal
                                 </button>
                                 <button
                                     type="button"
@@ -1366,7 +1458,7 @@ export default function EmployeeShow({
                                     disabled={processing}
                                     className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
                                 >
-                                    {processing ? 'Saving...' : 'Save Employee'}
+                                    {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                                 </button>
                             </>
                         ) : (
@@ -1378,7 +1470,7 @@ export default function EmployeeShow({
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
-                                Edit Employee
+                                Edit Karyawan
                             </button>
                         )}
                     </div>
@@ -1392,8 +1484,8 @@ export default function EmployeeShow({
                                 <Menu as="div" key={tab.id} className="relative">
                                     <Menu.Button
                                         className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${tab.items.some(i => i.id === activeTab)
-                                                ? 'text-red-600 border-red-600 bg-red-50'
-                                                : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                                            ? 'text-red-600 border-red-600 bg-red-50'
+                                            : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
                                             }`}
                                     >
                                         <span>{tab.icon}</span>
@@ -1435,8 +1527,8 @@ export default function EmployeeShow({
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === tab.id
-                                            ? 'text-red-600 border-red-600 bg-red-50'
-                                            : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
+                                        ? 'text-red-600 border-red-600 bg-red-50'
+                                        : 'text-gray-600 border-transparent hover:text-gray-900 hover:bg-gray-50'
                                         }`}
                                 >
                                     <span>{tab.icon}</span>
@@ -1462,6 +1554,15 @@ function InfoField({ label, value, className = '' }) {
         <div className={className}>
             <p className="text-xs text-gray-500 mb-1">{label}</p>
             <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{value}</p>
+        </div>
+    );
+}
+
+function EditableInfoField({ label, displayValue, isEditing, input, className = '' }) {
+    return (
+        <div className={className}>
+            <p className="text-xs text-gray-500 mb-1">{label}</p>
+            {isEditing ? input : <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">{displayValue}</p>}
         </div>
     );
 }

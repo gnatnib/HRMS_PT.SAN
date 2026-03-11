@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Announcement extends Model
 {
@@ -17,6 +18,9 @@ class Announcement extends Model
     protected $fillable = [
         'title',
         'content',
+        'created_by_user_id',
+        'created_by_name',
+        'created_by_role',
         'is_active',
     ];
 
@@ -28,4 +32,9 @@ class Announcement extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
+    }
 }

@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('employees', function (Blueprint $table) {
-            // Employee ID and Organization
+            // Employee ID and Division
             $table->string('employee_code', 20)->nullable()->after('id');
             $table->string('barcode', 50)->nullable()->after('employee_code');
             $table->date('join_date')->nullable()->after('contract_id');

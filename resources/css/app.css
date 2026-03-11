@@ -31,12 +31,15 @@
         @apply block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:border-primary-500 focus:ring-primary-500;
     }
 
+    .form-input {
+        @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500;
+    }
+
     .label {
         @apply block mb-1 text-sm font-medium text-gray-700;
     }
 }
 
-/* Sidebar styles for Mekari Talenta-like design */
 @layer components {
     .sidebar {
         @apply fixed top-0 left-0 z-40 flex flex-col w-64 h-screen bg-primary-900;

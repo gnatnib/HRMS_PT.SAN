@@ -3,72 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class AnnouncementController extends Controller
 {
-    /**
-     * Display a listing of announcements.
-     */
-    public function index()
-    {
-        $announcements = Announcement::latest()->paginate(10);
-
-        return Inertia::render('Announcements/Index', [
-            'announcements' => $announcements,
-        ]);
-    }
-
-    /**
-     * Store a newly created announcement.
-     */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_active' => 'boolean',
+            'title' => 'required|string|max:150',
+            'content' => 'required|string|max:3000',
         ]);
 
-        Announcement::create($validated);
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        $roleName = ($user && method_exists($user, 'getRoleNames'))
+            ? ($user->getRoleNames()->first() ?? 'user')
+            : 'user';
 
-        return redirect()->back()->with('success', 'Pengumuman berhasil ditambahkan.');
-    }
-
-    /**
-     * Update the specified announcement.
-     */
-    public function update(Request $request, Announcement $announcement)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_active' => 'boolean',
+        Announcement::create([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'created_by_user_id' => $user ? $user->id : null,
+            'created_by_name' => $user?->name ?? 'System',
+            'created_by_role' => $roleName,
+            'is_active' => true,
         ]);
 
-        $announcement->update($validated);
-
-        return redirect()->back()->with('success', 'Pengumuman berhasil diperbarui.');
-    }
-
-    /**
-     * Remove the specified announcement.
-     */
-    public function destroy(Announcement $announcement)
-    {
-        $announcement->delete();
-
-        return redirect()->back()->with('success', 'Pengumuman berhasil dihapus.');
-    }
-
-    /**
-     * Toggle the active status of an announcement.
-     */
-    public function toggle(Announcement $announcement)
-    {
-        $announcement->update(['is_active' => !$announcement->is_active]);
-
-        return redirect()->back()->with('success', 'Status pengumuman berhasil diubah.');
+        return redirect()->route('dashboard')->with('success', 'Announcement added successfully.');
     }
 }

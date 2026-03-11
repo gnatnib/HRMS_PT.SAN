@@ -21,6 +21,9 @@ class Employee extends Model
     protected $fillable = [
         'id',
         'contract_id',
+        'position_id',
+        'department_id',
+        'center_id',
         'employee_code',
         'barcode',
         'first_name',
@@ -38,6 +41,9 @@ class Employee extends Model
         'address',
         'notes',
         'join_date',
+        'employment_status',
+        'status_reason',
+        'status_notes',
         'balance_leave_allowed',
         'max_leave_allowed',
         'delay_counter',
@@ -58,12 +64,21 @@ class Employee extends Model
         'count_holiday_as_working_day',
         'salary_type',
         'salary_configuration',
+        'taxable_date',
         'overtime_status',
         'employee_tax_status',
         'jht_configuration',
         'bpjs_kesehatan_config',
         'jaminan_pensiun_config',
         'npp_bpjs_ketenagakerjaan',
+        'bpjs_ketenagakerjaan',
+        'bpjs_kesehatan',
+        'bpjs_kesehatan_family',
+        'npwp',
+        'currency',
+        'bpjs_ketenagakerjaan_date',
+        'bpjs_kesehatan_date',
+        'jaminan_pensiun_date',
         // Bank info
         'bank_name',
         'bank_account_number',
@@ -72,15 +87,24 @@ class Employee extends Model
         'family_members',
         'emergency_contacts',
         'education',
+        'training_courses',
+        'work_experience',
     ];
 
     protected $casts = [
         'family_members' => 'array',
         'emergency_contacts' => 'array',
         'education' => 'array',
+        'training_courses' => 'array',
+        'work_experience' => 'array',
         'is_permanent_identity' => 'boolean',
         'birth_date' => 'date',
         'identity_expired_date' => 'date',
+        'taxable_date' => 'date',
+        'bpjs_ketenagakerjaan_date' => 'date',
+        'bpjs_kesehatan_date' => 'date',
+        'jaminan_pensiun_date' => 'date',
+        'count_holiday_as_working_day' => 'boolean',
     ];
 
     // 👉 Links
@@ -107,6 +131,21 @@ class Employee extends Model
     public function timelines(): HasMany
     {
         return $this->hasMany(Timeline::class);
+    }
+
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function center(): BelongsTo
+    {
+        return $this->belongsTo(Center::class);
     }
 
     public function leaves(): BelongsToMany

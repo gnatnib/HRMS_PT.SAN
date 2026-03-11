@@ -15,11 +15,12 @@ class DatabaseSeeder extends Seeder
     {
         // Seeds in order of dependency
         $this->call([
-            DivisionPositionBranchSeeder::class, // Creates divisions (centers), positions, branches (departments), job levels (contracts)
-            ContractsSeeder::class,    // Creates contracts first (may be redundant, but kept for backward compatibility)
-            EmployeesSeeder::class,    // Creates sample employees (needs contracts)
-            TimelineSeeder::class,     // Creates timeline entries
-            AdminUserSeeder::class,    // Creates admin user linked to first employee
+            DivisionPositionBranchSeeder::class,
+            EmployeesSeeder::class,
+            EmployeeFamilyEducationSeeder::class,
+            TimelineSeeder::class,
+            AdminUserSeeder::class,
+            AnnouncementSeeder::class,
         ]);
 
         // Create role (if not exists)

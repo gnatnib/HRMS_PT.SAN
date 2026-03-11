@@ -8,7 +8,6 @@ export default {
     theme: {
         extend: {
             colors: {
-                // Mekari Talenta-inspired blue theme
                 primary: {
                     50: '#eff6ff',
                     100: '#dbeafe',

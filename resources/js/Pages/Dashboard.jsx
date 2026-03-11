@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState, useEffect } from 'react';
 import {
@@ -21,9 +21,14 @@ export default function Dashboard({
     newHiresThisMonth,
     whosOff,
 }) {
-    const { auth } = usePage().props;
+    const { auth, flash } = usePage().props;
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+    const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const announcementForm = useForm({
+        title: '',
+        content: '',
+    });
 
     // Live Clock
     useEffect(() => {
@@ -36,6 +41,33 @@ export default function Dashboard({
         minute: '2-digit',
         second: '2-digit',
     });
+    const viewerRole = auth?.user?.role ? auth.user.role.replace(/_/g, ' ') : 'user';
+
+    const submitAnnouncement = (e) => {
+        e.preventDefault();
+        announcementForm.post('/announcements', {
+            preserveScroll: true,
+            onSuccess: () => {
+                announcementForm.reset();
+                setShowAnnouncementForm(false);
+            },
+        });
+    };
+
+    const getEmploymentCount = (label) => stats?.employmentStatus?.data?.find((item) => item.name === label)?.count || 0;
+
+    const getWhoOffTone = (status) => {
+        switch (status) {
+            case 'Izin':
+                return 'text-amber-600';
+            case 'Cuti':
+                return 'text-yellow-600';
+            case 'Dinas Luar':
+                return 'text-teal-600';
+            default:
+                return 'text-gray-500';
+        }
+    };
 
     return (
         <MekariLayout>
@@ -70,6 +102,12 @@ export default function Dashboard({
                         </p>
                     </div>
                 </div>
+
+                {flash?.success && (
+                    <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        {flash.success}
+                    </div>
+                )}
 
                 {/* Stats Cards Row */}
                 <div className="grid gap-4 mb-6 md:grid-cols-2 lg:grid-cols-4">
@@ -136,27 +174,27 @@ export default function Dashboard({
                                     </div>
                                     <div className="bg-blue-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-blue-600">
-                                            {stats?.employmentStatus?.data?.find(d => d.name === 'Active')?.count || 0}
+                                            {getEmploymentCount('Aktif')}
                                         </p>
-                                        <p className="text-xs text-blue-700">Active</p>
+                                        <p className="text-xs text-blue-700">Aktif</p>
                                     </div>
                                     <div className="bg-red-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-red-600">
-                                            {stats?.employmentStatus?.data?.find(d => d.name === 'Terminated')?.count || 0}
+                                            {getEmploymentCount('Terminated')}
                                         </p>
                                         <p className="text-xs text-red-700">Terminated</p>
                                     </div>
-                                    <div className="bg-yellow-50 rounded-lg p-3 text-center">
+                                    <div className="bg-amber-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-yellow-600">
-                                            {stats?.employmentStatus?.data?.find(d => d.name === 'On Leave')?.count || 0}
+                                            {getEmploymentCount('Izin')}
                                         </p>
-                                        <p className="text-xs text-yellow-700">On Leave</p>
+                                        <p className="text-xs text-yellow-700">Izin</p>
                                     </div>
                                     <div className="bg-teal-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-teal-600">
-                                            {stats?.employmentStatus?.data?.find(d => d.name === 'Business Trip')?.count || 0}
+                                            {getEmploymentCount('Dinas Luar')}
                                         </p>
-                                        <p className="text-xs text-teal-700">Business Trip</p>
+                                        <p className="text-xs text-teal-700">Dinas Luar</p>
                                     </div>
                                 </div>
                             </div>
@@ -164,7 +202,20 @@ export default function Dashboard({
 
                         {/* Announcement */}
                         <div className="widget-card">
-                            <h3 className="text-sm font-semibold text-gray-900 mb-4">Announcement</h3>
+                            <div className="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-900">Announcement</h3>
+                                    <p className="mt-1 text-xs text-gray-500">This announcement is visible to all logged-in users.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAnnouncementForm(true)}
+                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
+                                >
+                                    <span>+</span>
+                                    Add Announcement
+                                </button>
+                            </div>
                             {announcements && announcements.length > 0 ? (
                                 <div className="space-y-3">
                                     {announcements.map((item) => (
@@ -174,15 +225,16 @@ export default function Dashboard({
                                             className="group relative p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-100 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-purple-100 hover:border-purple-200 hover:-translate-y-0.5"
                                         >
                                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-xl"></div>
-                                            <div className="flex items-start gap-3 pl-2">
-                                                <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 shadow-md">
+                                                <div className="flex items-start gap-3 pl-2">
+                                                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 shadow-md">
                                                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                                     </svg>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="text-sm font-semibold text-gray-900 truncate group-hover:text-purple-700 transition-colors">{item.title}</h4>
-                                                    <p className="text-xs text-gray-500 mt-1">{item.date}</p>
+                                                    <p className="mt-1 text-[11px] text-gray-500">{item.created_by_name} - {item.created_by_role}</p>
+                                                    <p className="text-[11px] text-gray-400 mt-0.5">{item.date} • {item.time} WIB</p>
                                                     <p className="text-xs text-gray-600 mt-1 line-clamp-2">{item.content}</p>
                                                 </div>
                                             </div>
@@ -196,8 +248,8 @@ export default function Dashboard({
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                         </svg>
                                     </div>
-                                    <p className="text-gray-500 text-sm font-medium">Belum ada pengumuman</p>
-                                    <p className="text-xs text-gray-400 mt-1">Pengumuman baru akan tampil di sini</p>
+                                    <p className="text-gray-500 text-sm font-medium">No announcements yet</p>
+                                    <p className="text-xs text-gray-400 mt-1">New announcements will appear here</p>
                                 </div>
                             )}
                         </div>
@@ -245,17 +297,86 @@ export default function Dashboard({
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-gray-900 truncate">{person.name}</p>
-                                            <p className="text-xs text-blue-600">{person.type}</p>
+                                            <p className={`text-xs font-medium ${getWhoOffTone(person.type)}`}>{person.type}</p>
+                                            {person.reason && <p className="text-[11px] text-gray-500">{person.reason}</p>}
                                         </div>
                                     </div>
                                 )) : (
-                                    <p className="text-sm text-gray-400 text-center py-4">Semua karyawan hadir 🎉</p>
+                                    <p className="text-sm text-gray-400 text-center py-4">Everyone is available today 🎉</p>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {showAnnouncementForm && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    onClick={() => setShowAnnouncementForm(false)}
+                >
+                    <div
+                        className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 px-6 py-5 text-white">
+                            <p className="text-xs uppercase tracking-[0.2em] text-slate-300">Announcement Center</p>
+                            <h2 className="mt-1 text-xl font-semibold">Create a new announcement</h2>
+                            <p className="mt-1 text-sm text-slate-200">Announcements published here are immediately visible to all logged-in roles.</p>
+                        </div>
+
+                        <form onSubmit={submitAnnouncement} className="space-y-5 px-6 py-6">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">Announcement Title</label>
+                                <input
+                                    type="text"
+                                    value={announcementForm.data.title}
+                                    onChange={(e) => announcementForm.setData('title', e.target.value)}
+                                    className="form-input"
+                                    placeholder="Example: Payroll data update reminder"
+                                />
+                                {announcementForm.errors.title && (
+                                    <p className="mt-2 text-sm text-red-600">{announcementForm.errors.title}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-gray-700">Announcement Content</label>
+                                <textarea
+                                    value={announcementForm.data.content}
+                                    onChange={(e) => announcementForm.setData('content', e.target.value)}
+                                    className="form-input min-h-40"
+                                    placeholder="Write the key information you want to share with all users..."
+                                />
+                                {announcementForm.errors.content && (
+                                    <p className="mt-2 text-sm text-red-600">{announcementForm.errors.content}</p>
+                                )}
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                Created by <span className="font-semibold text-slate-900">{auth?.user?.name}</span> ({viewerRole})
+                            </div>
+
+                            <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAnnouncementForm(false)}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={announcementForm.processing}
+                                    className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {announcementForm.processing ? 'Publishing...' : 'Publish Announcement'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Announcement Detail Modal */}
             {selectedAnnouncement && (
@@ -289,11 +410,16 @@ export default function Dashboard({
                             </div>
                         </div>
                         <div className="px-6 py-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span className="text-sm text-gray-500">Dipublikasikan: {selectedAnnouncement.date}</span>
+                            <div className="mb-4 grid gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600 sm:grid-cols-2">
+                                <div>
+                                    <p className="text-xs uppercase tracking-wide text-gray-400">Dibuat oleh</p>
+                                    <p className="mt-1 font-medium text-gray-900">{selectedAnnouncement.created_by_name}</p>
+                                    <p className="text-xs text-gray-500">{selectedAnnouncement.created_by_role}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs uppercase tracking-wide text-gray-400">Waktu publikasi</p>
+                                    <p className="mt-1 font-medium text-gray-900">{selectedAnnouncement.published_at} WIB</p>
+                                </div>
                             </div>
                             <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
                                 {selectedAnnouncement.content}

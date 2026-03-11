@@ -42,6 +42,8 @@ class Employee extends Model
         'notes',
         'join_date',
         'employment_status',
+        'status_reason',
+        'status_notes',
         'balance_leave_allowed',
         'max_leave_allowed',
         'delay_counter',

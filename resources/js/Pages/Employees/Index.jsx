@@ -1,6 +1,6 @@
 import { Head, router, Link, usePage } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function EmployeesIndex({ employees = {}, departments = [], centers = [], stats = {}, filters = {}, flash }) {
     const { auth } = usePage().props;
@@ -16,6 +16,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
         total: stats.total || 0,
         active: stats.active || 0,
         terminated: stats.terminated || 0,
+        permission: stats.permission || 0,
         probation: stats.probation || 0,
         on_leave: stats.on_leave || 0,
         business_trip: stats.business_trip || 0,
@@ -38,10 +39,11 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
 
     // Name color based on status
     const getEmployeeNameColor = (emp) => {
-        if (!emp.is_active) return 'text-red-600 hover:text-red-800';
-        if (emp.employment_status === 'Probation') return 'text-blue-600 hover:text-blue-800';
-        if (emp.employment_status === 'Business Trip') return 'text-teal-600 hover:text-teal-800';
-        if (['Sick', 'Leave', 'Permission'].includes(emp.employment_status)) return 'text-yellow-600 hover:text-yellow-800';
+        if (emp.employment_status === 'Terminated') return 'text-red-600 hover:text-red-800';
+        if (emp.employment_status === 'Masa Percobaan') return 'text-blue-600 hover:text-blue-800';
+        if (emp.employment_status === 'Dinas Luar') return 'text-teal-600 hover:text-teal-800';
+        if (emp.employment_status === 'Izin') return 'text-amber-600 hover:text-amber-800';
+        if (emp.employment_status === 'Cuti') return 'text-yellow-600 hover:text-yellow-800';
         return 'text-green-600 hover:text-green-800';
     };
 
@@ -54,11 +56,18 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
         };
         // Remove empty params
         Object.keys(params).forEach(key => { if (!params[key]) delete params[key]; });
-        router.get('/employees', params, { preserveState: true });
+        router.get('/employees', params, { preserveState: true, replace: true });
     };
 
-    const handleSearch = () => applyFilters();
-    const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch(); };
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (search !== (filters.search || '')) {
+                applyFilters({ search });
+            }
+        }, 250);
+
+        return () => clearTimeout(timeout);
+    }, [search]);
 
     const handleDelete = (emp) => {
         if (confirm(`Hapus karyawan "${emp.first_name} ${emp.last_name}"?`)) {
@@ -95,7 +104,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
 
     return (
         <MekariLayout>
-            <Head title="Karyawan" />
+            <Head title="Employees" />
 
             <div className="space-y-5 px-6 py-6 max-w-7xl mx-auto">
                 {flash?.success && (
@@ -114,7 +123,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                         <div className="absolute right-20 -bottom-10 w-24 h-24 bg-white/5 rounded-full" />
                     </div>
                     <div className="relative px-8 py-6">
-                        <h1 className="text-2xl font-semibold text-white mb-1">Karyawan</h1>
+                        <h1 className="text-2xl font-semibold text-white mb-1">Employees</h1>
                         <p className="text-slate-400 text-sm">PT. SINERGI ASTA NUSANTARA</p>
                     </div>
                 </div>
@@ -130,7 +139,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                             </svg>
                         </div>
-                        <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">TAMBAH KARYAWAN</span>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">ADD EMPLOYEE</span>
                     </Link>
                     <Link
                         href="/employees-bulk-add"
@@ -141,7 +150,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-                        <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600">BULK ADD KARYAWAN</span>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600">BULK ADD EMPLOYEE</span>
                     </Link>
                     <button
                         onClick={handleExport}
@@ -186,9 +195,10 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                             >
                                 <option value="">Semua Status</option>
                                 <option value="active">Aktif</option>
-                                <option value="terminated">Tidak Aktif</option>
+                                <option value="terminated">Terminated</option>
+                                <option value="permission">Izin</option>
                                 <option value="probation">Masa Percobaan</option>
-                                <option value="on_leave">Cuti / Sakit</option>
+                                <option value="on_leave">Cuti</option>
                                 <option value="business_trip">Dinas Luar</option>
                             </select>
                         </div>
@@ -225,15 +235,14 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                     type="text"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    onKeyDown={handleKeyDown}
                                     className="w-full px-3 py-2 pr-8 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                     placeholder="Nama, ID, atau email..."
                                 />
-                                <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
-                                </button>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -383,10 +392,10 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                                 <p className="text-gray-500 text-sm mb-1">Belum ada data karyawan</p>
-                                                <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Tambah karyawan →</Link>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                 <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Add employee →</Link>
+                                             </div>
+                                         </td>
+                                     </tr>
                                 )}
                             </tbody>
                         </table>
@@ -419,7 +428,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-gray-900">{employeeStats.total}</p>
                         <p className="text-xs text-gray-500 mt-1">Total</p>
@@ -430,7 +439,11 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-red-600">{employeeStats.terminated}</p>
-                        <p className="text-xs text-gray-500 mt-1">Tidak Aktif</p>
+                        <p className="text-xs text-gray-500 mt-1">Terminated</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
+                        <p className="text-xl font-bold text-amber-600">{employeeStats.permission}</p>
+                        <p className="text-xs text-gray-500 mt-1">Izin</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-blue-600">{employeeStats.probation}</p>

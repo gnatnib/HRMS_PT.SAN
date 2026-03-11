@@ -2,40 +2,42 @@
 
 namespace Database\Seeders;
 
-use Faker\Factory;
-use App\Models\Center;
-use App\Models\Department;
 use App\Models\Employee;
-use App\Models\Position;
 use App\Models\Timeline;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class TimelineSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Factory::create();
+        $employees = Employee::query()
+            ->select('id', 'center_id', 'department_id', 'position_id', 'join_date', 'employment_status')
+            ->whereNotNull('center_id')
+            ->whereNotNull('department_id')
+            ->whereNotNull('position_id')
+            ->get();
 
-        $employees = Employee::select('id')->pluck('id')->random(5);
-        $centers = Center::select('id')->pluck('id')->random(5);
-        $departments = Department::select('id')->pluck('id')->random(5);
-        $positions = Position::select('id')->pluck('id')->random(5);
+        foreach ($employees as $employee) {
+            $startDate = $employee->join_date ?: Carbon::now()->subMonths(6)->toDateString();
 
-        for ($i = 0; $i < 5; $i++) {
-            Timeline::create([
-                'center_id' => $centers[$i],
-                'department_id' => $departments[$i],
-                'position_id' => $positions[$i],
-                'employee_id' => $employees[$i],
-                'start_date' => $faker->date(),
-                'end_date' => null,
-                'created_by' => $faker->name,
-                'updated_by' => $faker->name,
-                'deleted_by' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-                'deleted_at' => null,
-            ]);
+            Timeline::updateOrCreate(
+                [
+                    'employee_id' => $employee->id,
+                    'end_date' => null,
+                ],
+                [
+                    'center_id' => $employee->center_id,
+                    'department_id' => $employee->department_id,
+                    'position_id' => $employee->position_id,
+                    'start_date' => $startDate,
+                    'notes' => 'Posisi aktif karyawan untuk kebutuhan presentasi HRMS.',
+                    'created_by' => 'System',
+                    'updated_by' => 'System',
+                ]
+            );
         }
+
+        $this->command->info('✅ Timeline aktif diperbarui untuk ' . $employees->count() . ' karyawan');
     }
 }

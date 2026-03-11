@@ -77,17 +77,16 @@ class DashboardController extends Controller
     {
         $total = Employee::count();
 
-        $activeCount = Employee::where('is_active', true)
-            ->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])
-            ->count();
-        $terminatedCount = Employee::where('is_active', false)->count();
-        $probationCount = Employee::where('employment_status', 'Probation')->count();
-        $onLeaveCount = Employee::whereIn('employment_status', ['Sick', 'Leave', 'Permission'])->count();
-        $businessTripCount = Employee::where('employment_status', 'Business Trip')->count();
+        $activeCount = Employee::where('is_active', true)->where('employment_status', 'Aktif')->count();
+        $terminatedCount = Employee::where('employment_status', 'Terminated')->count();
+        $permissionCount = Employee::where('employment_status', 'Izin')->count();
+        $leaveCount = Employee::where('employment_status', 'Cuti')->count();
+        $businessTripCount = Employee::where('employment_status', 'Dinas Luar')->count();
+        $probationCount = Employee::where('employment_status', 'Masa Percobaan')->count();
 
         $data = [
             [
-                'name' => 'Active',
+                'name' => 'Aktif',
                 'count' => $activeCount,
                 'percentage' => $total > 0 ? round(($activeCount / $total) * 100, 1) : 0,
                 'color' => '#22C55E',
@@ -99,22 +98,28 @@ class DashboardController extends Controller
                 'color' => '#EF4444',
             ],
             [
-                'name' => 'Probation',
-                'count' => $probationCount,
-                'percentage' => $total > 0 ? round(($probationCount / $total) * 100, 1) : 0,
-                'color' => '#3B82F6',
+                'name' => 'Izin',
+                'count' => $permissionCount,
+                'percentage' => $total > 0 ? round(($permissionCount / $total) * 100, 1) : 0,
+                'color' => '#F59E0B',
             ],
             [
-                'name' => 'On Leave',
-                'count' => $onLeaveCount,
-                'percentage' => $total > 0 ? round(($onLeaveCount / $total) * 100, 1) : 0,
+                'name' => 'Cuti',
+                'count' => $leaveCount,
+                'percentage' => $total > 0 ? round(($leaveCount / $total) * 100, 1) : 0,
                 'color' => '#EAB308',
             ],
             [
-                'name' => 'Business Trip',
+                'name' => 'Dinas Luar',
                 'count' => $businessTripCount,
                 'percentage' => $total > 0 ? round(($businessTripCount / $total) * 100, 1) : 0,
                 'color' => '#14B8A6',
+            ],
+            [
+                'name' => 'Masa Percobaan',
+                'count' => $probationCount,
+                'percentage' => $total > 0 ? round(($probationCount / $total) * 100, 1) : 0,
+                'color' => '#3B82F6',
             ],
         ];
 
@@ -210,15 +215,20 @@ class DashboardController extends Controller
     private function getAnnouncements(): array
     {
         try {
-            return Announcement::where('is_active', true)
+            return Announcement::with('creator:id,name')
+                ->where('is_active', true)
                 ->latest()
-                ->take(3)
-                ->get(['id', 'title', 'content', 'created_at'])
+                ->take(5)
+                ->get(['id', 'title', 'content', 'created_at', 'created_by_user_id', 'created_by_name', 'created_by_role'])
                 ->map(fn($item) => [
                     'id' => $item->id,
                     'title' => $item->title,
                     'content' => $item->content,
                     'date' => $item->created_at->translatedFormat('d M Y'),
+                    'time' => $item->created_at->translatedFormat('H:i'),
+                    'published_at' => $item->created_at->translatedFormat('d F Y, H:i'),
+                    'created_by_name' => $item->created_by_name ?: ($item->creator?->name ?? 'System'),
+                    'created_by_role' => $item->created_by_role ? str_replace('_', ' ', ucfirst($item->created_by_role)) : 'User',
                 ])
                 ->toArray();
         } catch (\Exception $e) {
@@ -229,8 +239,8 @@ class DashboardController extends Controller
     private function getWhosOff(): array
     {
         // Get employees with leave/sick status
-        $offEmployees = Employee::whereIn('employment_status', ['Sick', 'Leave', 'Permission', 'Business Trip'])
-            ->select('id', 'first_name', 'last_name', 'employment_status')
+        $offEmployees = Employee::whereIn('employment_status', ['Izin', 'Cuti', 'Dinas Luar'])
+            ->select('id', 'first_name', 'last_name', 'employment_status', 'status_reason')
             ->take(5)
             ->get();
 
@@ -238,6 +248,7 @@ class DashboardController extends Controller
             return $offEmployees->map(fn($emp) => [
                 'name' => $emp->first_name . ' ' . ($emp->last_name ?? ''),
                 'type' => $emp->employment_status,
+                'reason' => $emp->status_reason,
             ])->toArray();
         }
 

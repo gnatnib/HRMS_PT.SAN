@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Position;
 use App\Models\Center;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,30 +43,9 @@ class EmployeeController extends Controller
                 'barcode'
             );
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('employee_code', 'like', "%{$search}%")
-                    ->orWhere('mobile_number', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
+        $this->applyEmployeeSearch($query, $search);
 
-        // Status filter - supports multiple statuses
-        if ($status !== null && $status !== '') {
-            if ($status === 'active') {
-                $query->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip']);
-            } elseif ($status === 'terminated') {
-                $query->where('is_active', false);
-            } elseif ($status === 'probation') {
-                $query->where('employment_status', 'Probation');
-            } elseif ($status === 'on_leave') {
-                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission']);
-            } elseif ($status === 'business_trip') {
-                $query->where('employment_status', 'Business Trip');
-            }
-        }
+        $this->applyStatusFilter($query, $status);
 
         // Branch filter (departments table stores locations/branches)
         if ($branch !== null && $branch !== '') {
@@ -100,13 +80,7 @@ class EmployeeController extends Controller
 
         // Stats — computed based on current filters (except status filter)
         $statsQuery = Employee::query();
-        if ($search) {
-            $statsQuery->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('employee_code', 'like', "%{$search}%");
-            });
-        }
+        $this->applyEmployeeSearch($statsQuery, $search);
         if ($branch !== null && $branch !== '') {
             $statsQuery->where('department_id', $branch);
         }
@@ -116,11 +90,12 @@ class EmployeeController extends Controller
 
         $stats = [
             'total' => (clone $statsQuery)->count(),
-            'active' => (clone $statsQuery)->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip'])->count(),
-            'terminated' => (clone $statsQuery)->where('is_active', false)->count(),
-            'probation' => (clone $statsQuery)->where('employment_status', 'Probation')->count(),
-            'on_leave' => (clone $statsQuery)->whereIn('employment_status', ['Sick', 'Leave', 'Permission'])->count(),
-            'business_trip' => (clone $statsQuery)->where('employment_status', 'Business Trip')->count(),
+            'active' => (clone $statsQuery)->where('employment_status', 'Aktif')->count(),
+            'terminated' => (clone $statsQuery)->where('employment_status', 'Terminated')->count(),
+            'permission' => (clone $statsQuery)->where('employment_status', 'Izin')->count(),
+            'probation' => (clone $statsQuery)->where('employment_status', 'Masa Percobaan')->count(),
+            'on_leave' => (clone $statsQuery)->where('employment_status', 'Cuti')->count(),
+            'business_trip' => (clone $statsQuery)->where('employment_status', 'Dinas Luar')->count(),
         ];
 
         return Inertia::render('Employees/Index', [
@@ -178,6 +153,8 @@ class EmployeeController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'employment_status' => 'nullable|string|max:30',
             'employee_status' => 'nullable|string|max:30',
+            'status_reason' => 'nullable|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
             'contract_id' => 'nullable|exists:contracts,id',
             'join_date' => 'nullable|date|before_or_equal:today',
             'max_leave_allowed' => 'nullable|integer|min:0|max:30',
@@ -284,19 +261,17 @@ class EmployeeController extends Controller
 
         // Handle employee_status -> is_active + employment_status mapping
         if (isset($validated['employee_status'])) {
-            $statusMap = [
-                'Aktif' => ['is_active' => true, 'employment_status' => 'Permanent'],
-                'Tidak Aktif' => ['is_active' => false, 'employment_status' => 'Terminated'],
-                'Cuti' => ['is_active' => true, 'employment_status' => 'Leave'],
-                'Dinas Luar' => ['is_active' => true, 'employment_status' => 'Business Trip'],
-                'Masa Percobaan' => ['is_active' => true, 'employment_status' => 'Probation'],
-            ];
-            $mapped = $statusMap[$validated['employee_status']] ?? ['is_active' => true, 'employment_status' => 'Permanent'];
+            $mapped = $this->resolveEmployeeStatus($validated['employee_status']);
             $validated['is_active'] = $mapped['is_active'];
             $validated['employment_status'] = $mapped['employment_status'];
+            if ($validated['employment_status'] === 'Aktif') {
+                $validated['status_reason'] = null;
+                $validated['status_notes'] = null;
+            }
             unset($validated['employee_status']);
         } else {
             $validated['is_active'] = true;
+            $validated['employment_status'] = 'Aktif';
         }
         $validated['balance_leave_allowed'] = $validated['max_leave_allowed'] ?? 12;
 
@@ -371,6 +346,8 @@ class EmployeeController extends Controller
             'department_id' => 'nullable|exists:departments,id',
             'employment_status' => 'nullable|string|max:30',
             'employee_status' => 'nullable|string|max:30',
+            'status_reason' => 'nullable|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
             'join_date' => 'nullable|date|before_or_equal:today',
             'is_active' => 'boolean',
             'max_leave_allowed' => 'nullable|integer|min:0|max:30',
@@ -451,16 +428,13 @@ class EmployeeController extends Controller
 
         // Handle employee_status -> is_active + employment_status mapping
         if (isset($validated['employee_status'])) {
-            $statusMap = [
-                'Aktif' => ['is_active' => true, 'employment_status' => 'Permanent'],
-                'Tidak Aktif' => ['is_active' => false, 'employment_status' => 'Terminated'],
-                'Cuti' => ['is_active' => true, 'employment_status' => 'Leave'],
-                'Dinas Luar' => ['is_active' => true, 'employment_status' => 'Business Trip'],
-                'Masa Percobaan' => ['is_active' => true, 'employment_status' => 'Probation'],
-            ];
-            $mapped = $statusMap[$validated['employee_status']] ?? ['is_active' => true, 'employment_status' => 'Permanent'];
+            $mapped = $this->resolveEmployeeStatus($validated['employee_status']);
             $validated['is_active'] = $mapped['is_active'];
             $validated['employment_status'] = $mapped['employment_status'];
+            if ($validated['employment_status'] === 'Aktif') {
+                $validated['status_reason'] = null;
+                $validated['status_notes'] = null;
+            }
             unset($validated['employee_status']);
         }
 
@@ -491,27 +465,9 @@ class EmployeeController extends Controller
         $branch = $request->get('branch');
         $division = $request->get('division');
 
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('employee_code', 'like', "%{$search}%");
-            });
-        }
+        $this->applyEmployeeSearch($query, $search);
 
-        if ($status !== null && $status !== '') {
-            if ($status === 'active') {
-                $query->where('is_active', true)->whereNotIn('employment_status', ['Probation', 'Sick', 'Leave', 'Permission', 'Business Trip']);
-            } elseif ($status === 'terminated') {
-                $query->where('is_active', false);
-            } elseif ($status === 'probation') {
-                $query->where('employment_status', 'Probation');
-            } elseif ($status === 'on_leave') {
-                $query->whereIn('employment_status', ['Sick', 'Leave', 'Permission']);
-            } elseif ($status === 'business_trip') {
-                $query->where('employment_status', 'Business Trip');
-            }
-        }
+        $this->applyStatusFilter($query, $status);
 
         if ($branch !== null && $branch !== '') {
             $query->where('department_id', $branch);
@@ -536,7 +492,7 @@ class EmployeeController extends Controller
                 $emp->department?->name ?? '-',
                 $emp->position?->name ?? '-',
                 $emp->basic_salary ?? 0,
-                $emp->is_active ? ($emp->employment_status ?? 'Active') : 'Terminated',
+                $emp->employment_status ?? 'Aktif',
             ];
         }
 
@@ -679,5 +635,85 @@ class EmployeeController extends Controller
             'errors' => $errors,
             'message' => $message,
         ]);
+    }
+
+    public function searchSuggestions(Request $request)
+    {
+        $search = trim((string) $request->get('q', ''));
+
+        if ($search === '') {
+            return response()->json([]);
+        }
+
+        $employees = Employee::with(['position:id,name', 'department:id,name', 'center:id,name'])
+            ->select('id', 'first_name', 'last_name', 'employee_code', 'employment_status', 'position_id', 'department_id', 'center_id')
+            ->tap(fn($query) => $this->applyEmployeeSearch($query, $search))
+            ->orderBy('first_name')
+            ->limit(8)
+            ->get()
+            ->map(fn($employee) => [
+                'id' => $employee->id,
+                'name' => trim($employee->first_name . ' ' . ($employee->last_name ?? '')),
+                'employee_code' => $employee->employee_code,
+                'employment_status' => $employee->employment_status,
+                'position' => $employee->position?->name,
+                'division' => $employee->center?->name,
+                'branch' => $employee->department?->name,
+                'url' => route('employees.show', $employee),
+            ]);
+
+        return response()->json($employees);
+    }
+
+    private function applyEmployeeSearch($query, ?string $search): void
+    {
+        $search = trim((string) $search);
+
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function ($q) use ($search) {
+            $q->where('first_name', 'like', "%{$search}%")
+                ->orWhere('last_name', 'like', "%{$search}%")
+                ->orWhere('employee_code', 'like', "%{$search}%")
+                ->orWhere('mobile_number', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere(DB::raw("TRIM(CONCAT(first_name, ' ', COALESCE(last_name, '')))"), 'like', "%{$search}%");
+        });
+    }
+
+    private function applyStatusFilter($query, ?string $status): void
+    {
+        if ($status === null || $status === '') {
+            return;
+        }
+
+        $statusMap = [
+            'active' => 'Aktif',
+            'terminated' => 'Terminated',
+            'permission' => 'Izin',
+            'probation' => 'Masa Percobaan',
+            'on_leave' => 'Cuti',
+            'business_trip' => 'Dinas Luar',
+        ];
+
+        if (isset($statusMap[$status])) {
+            $query->where('employment_status', $statusMap[$status]);
+        }
+    }
+
+    private function resolveEmployeeStatus(string $employeeStatus): array
+    {
+        $statusMap = [
+            'Aktif' => ['is_active' => true, 'employment_status' => 'Aktif'],
+            'Terminated' => ['is_active' => false, 'employment_status' => 'Terminated'],
+            'Izin' => ['is_active' => true, 'employment_status' => 'Izin'],
+            'Cuti' => ['is_active' => true, 'employment_status' => 'Cuti'],
+            'Dinas Luar' => ['is_active' => true, 'employment_status' => 'Dinas Luar'],
+            'Masa Percobaan' => ['is_active' => true, 'employment_status' => 'Masa Percobaan'],
+        ];
+
+        return $statusMap[$employeeStatus] ?? ['is_active' => true, 'employment_status' => 'Aktif'];
     }
 }

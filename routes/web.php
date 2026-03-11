@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\RecruitmentController;
 use App\Http\Controllers\DashboardController;
@@ -22,11 +23,13 @@ Route::middleware(['auth'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
 
     // ========================================
     // EMPLOYEES — HR Administration
     // ========================================
     Route::resource('employees', EmployeeController::class);
+    Route::get('/employees-search-suggestions', [EmployeeController::class, 'searchSuggestions'])->name('employees.searchSuggestions');
     Route::get('/employees-export', [EmployeeController::class, 'export'])->name('employees.export');
     Route::post('/employees-bulk-delete', [EmployeeController::class, 'bulkDestroy'])->name('employees.bulkDestroy');
     Route::get('/employees-bulk-add', [EmployeeController::class, 'bulkCreate'])->name('employees.bulkCreate');

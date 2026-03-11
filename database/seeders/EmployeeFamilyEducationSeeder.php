@@ -159,7 +159,7 @@ class EmployeeFamilyEducationSeeder extends Seeder
             // Always add parents
             $familyMembers[] = [
                 'full_name' => $familyNames[array_rand($familyNames)] . ' ' . substr($employee->last_name, 0, 1) . '.',
-                'relationship' => 'Father',
+                    'relationship' => 'Ayah',
                 'birth_date' => date('Y-m-d', strtotime('-' . rand(50, 65) . ' years')),
                 'id_number' => '31740' . rand(10000000000, 99999999999),
                 'gender' => 'male',
@@ -168,7 +168,7 @@ class EmployeeFamilyEducationSeeder extends Seeder
 
             $familyMembers[] = [
                 'full_name' => $familyNames[array_rand($familyNames)] . ' ' . substr($employee->last_name, 0, 1) . '.',
-                'relationship' => 'Mother',
+                    'relationship' => 'Ibu',
                 'birth_date' => date('Y-m-d', strtotime('-' . rand(48, 63) . ' years')),
                 'id_number' => '31740' . rand(10000000000, 99999999999),
                 'gender' => 'female',
@@ -180,7 +180,7 @@ class EmployeeFamilyEducationSeeder extends Seeder
                 $spouseGender = $employee->gender == 1 ? 'female' : 'male';
                 $familyMembers[] = [
                     'full_name' => $familyNames[array_rand($familyNames)] . ' ' . $employee->last_name,
-                    'relationship' => 'Spouse',
+                    'relationship' => 'Pasangan',
                     'birth_date' => date('Y-m-d', strtotime('-' . rand(25, 40) . ' years')),
                     'id_number' => '31740' . rand(10000000000, 99999999999),
                     'gender' => $spouseGender,
@@ -192,7 +192,7 @@ class EmployeeFamilyEducationSeeder extends Seeder
             if (rand(0, 1) && in_array($employee->ptkp_status, ['K/1', 'K/2', 'K/3', 'TK/1', 'TK/2'])) {
                 $familyMembers[] = [
                     'full_name' => $familyNames[array_rand($familyNames)] . ' ' . $employee->last_name,
-                    'relationship' => 'Child',
+                    'relationship' => 'Anak',
                     'birth_date' => date('Y-m-d', strtotime('-' . rand(1, 15) . ' years')),
                     'id_number' => rand(0, 1) ? ('31740' . rand(10000000000, 99999999999)) : '',
                     'gender' => rand(0, 1) ? 'male' : 'female',
@@ -249,7 +249,7 @@ class EmployeeFamilyEducationSeeder extends Seeder
                     'held_by' => $trainingProviders[array_rand($trainingProviders)],
                     'start_date' => $startDate,
                     'end_date' => $endDate,
-                    'duration' => $duration . ' days',
+                    'duration' => $duration . ' hari',
                     'fee' => rand(5, 50) * 100000,
                     'certificate' => rand(0, 1) ? true : false
                 ];

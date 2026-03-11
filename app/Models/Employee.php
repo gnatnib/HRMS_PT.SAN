@@ -62,12 +62,21 @@ class Employee extends Model
         'count_holiday_as_working_day',
         'salary_type',
         'salary_configuration',
+        'taxable_date',
         'overtime_status',
         'employee_tax_status',
         'jht_configuration',
         'bpjs_kesehatan_config',
         'jaminan_pensiun_config',
         'npp_bpjs_ketenagakerjaan',
+        'bpjs_ketenagakerjaan',
+        'bpjs_kesehatan',
+        'bpjs_kesehatan_family',
+        'npwp',
+        'currency',
+        'bpjs_ketenagakerjaan_date',
+        'bpjs_kesehatan_date',
+        'jaminan_pensiun_date',
         // Bank info
         'bank_name',
         'bank_account_number',
@@ -89,6 +98,11 @@ class Employee extends Model
         'is_permanent_identity' => 'boolean',
         'birth_date' => 'date',
         'identity_expired_date' => 'date',
+        'taxable_date' => 'date',
+        'bpjs_ketenagakerjaan_date' => 'date',
+        'bpjs_kesehatan_date' => 'date',
+        'jaminan_pensiun_date' => 'date',
+        'count_holiday_as_working_day' => 'boolean',
     ];
 
     // 👉 Links

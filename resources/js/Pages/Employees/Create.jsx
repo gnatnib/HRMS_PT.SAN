@@ -2,7 +2,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState } from 'react';
 
-export default function EmployeeCreate({ auth, departments = [], positions = [], contracts = [], centers = [] }) {
+export default function EmployeeCreate({ auth, departments = [], positions = [], centers = [] }) {
     const [activeSection, setActiveSection] = useState('employment');
     const [showValidationModal, setShowValidationModal] = useState(false);
     const [validationErrors, setValidationErrors] = useState([]);
@@ -11,12 +11,11 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
         // Employment Data
         employee_code: '',
         barcode: '',
-        center_id: '',  // Division/Division
+        center_id: '',
         position_id: '',
-        employment_status: 'Permanent',
+        employee_status: 'Aktif',
         department_id: '',
         join_date: '',
-        contract_id: '',
 
         // Personal Data
         first_name: '',
@@ -47,27 +46,18 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
         ptkp_status: 'TK/0',
         tax_configuration: 'Gross',
         prorate_type: 'Based on Working Day',
-        count_national_holiday: false,
+        count_holiday_as_working_day: false,
         salary_type: 'Monthly',
         salary_configuration: 'Taxable',
         taxable_date: '',
-        overtime_status: 'Eligible',
-        employee_tax_status: 'Pegawai Tetap',
-        jht_configuration: 'Default',
-        bpjs_kesehatan_config: 'By Company',
-        jaminan_pensiun_config: 'Default',
-        npp_bpjs_ketenagakerjaan: 'Default',
         bpjs_ketenagakerjaan: '',
         bpjs_kesehatan: '',
         bpjs_kesehatan_family: '0',
         npwp: '',
         currency: 'IDR',
-        beginning_netto: 0,
-        pph21_paid: 0,
         bpjs_ketenagakerjaan_date: '',
         bpjs_kesehatan_date: '',
         jaminan_pensiun_date: '',
-        payroll_components: [],
 
         // Bank Info
         bank_name: '',
@@ -80,37 +70,57 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
     });
 
     const sections = [
-        { id: 'employment', name: 'Employment Data' },
-        { id: 'personal', name: 'Personal Data' },
-        { id: 'family', name: 'Family Info' },
-        { id: 'education', name: 'Education Info' },
-        { id: 'payroll', name: 'Payroll Info' },
-        { id: 'bank', name: 'Bank Info' },
+        { id: 'employment', name: 'Data Pekerjaan' },
+        { id: 'personal', name: 'Data Pribadi' },
+        { id: 'family', name: 'Info Keluarga' },
+        { id: 'education', name: 'Info Pendidikan' },
+        { id: 'payroll', name: 'Info Penggajian' },
     ];
 
-    const employmentStatuses = ['Permanent', 'Contract', 'Probation', 'Intern'];
     const identityTypes = ['KTP', 'SIM', 'Passport'];
     const educationGrades = ['SMA/SMK', 'D1', 'D2', 'D3', 'D4/S1', 'S2', 'S3'];
     const ptkpOptions = ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3'];
-    const taxConfigs = ['Gross', 'Gross Up', 'Nett'];
-    const salaryTypes = ['Monthly', 'Hourly', 'Daily'];
+    const taxConfigs = [
+        { value: 'Gross', label: 'Gross' },
+        { value: 'Gross Up', label: 'Gross Up' },
+        { value: 'Nett', label: 'Net' },
+    ];
+    const salaryTypes = [
+        { value: 'Monthly', label: 'Bulanan' },
+        { value: 'Hourly', label: 'Per Jam' },
+        { value: 'Daily', label: 'Harian' },
+    ];
     const prorateTypes = ['Based on Working Day', 'Based on Calendar Day', 'Custom on Working Day', 'Custom on Calendar Day'];
     const bpjsFamilyOptions = ['0', '1', '2', '3', '4', '5'];
     const currencyOptions = ['IDR', 'USD', 'SGD'];
-    const relationshipOptions = ['Father', 'Mother', 'Spouse', 'Child', 'Sibling', 'Other'];
+    const relationshipOptions = ['Ayah', 'Ibu', 'Pasangan', 'Anak', 'Saudara', 'Lainnya'];
+    const prorateTypeOptions = [
+        { value: 'Based on Working Day', label: 'Berdasarkan Hari Kerja' },
+        { value: 'Based on Calendar Day', label: 'Berdasarkan Hari Kalender' },
+        { value: 'Custom on Working Day', label: 'Kustom Hari Kerja' },
+        { value: 'Custom on Calendar Day', label: 'Kustom Hari Kalender' },
+    ];
+    const salaryConfigurationOptions = [
+        { value: 'Taxable', label: 'Kena Pajak' },
+        { value: 'Non Taxable', label: 'Tidak Kena Pajak' },
+    ];
+    const currencyOptionLabels = {
+        IDR: 'Rupiah (IDR)',
+        USD: 'US Dollar (USD)',
+        SGD: 'Singapore Dollar (SGD)',
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         // Validate mandatory fields
         const requiredFields = [
-            { field: 'first_name', label: 'First Name', section: 'personal' },
-            { field: 'gender', label: 'Gender', section: 'personal' },
-            { field: 'center_id', label: 'Division', section: 'employment' },
-            { field: 'position_id', label: 'Job Position', section: 'employment' },
-            { field: 'contract_id', label: 'Job Level', section: 'employment' },
-            { field: 'employment_status', label: 'Employment Status', section: 'employment' },
-            { field: 'join_date', label: 'Join Date', section: 'employment' },
+            { field: 'first_name', label: 'Nama Depan', section: 'personal' },
+            { field: 'gender', label: 'Jenis Kelamin', section: 'personal' },
+            { field: 'center_id', label: 'Divisi', section: 'employment' },
+            { field: 'position_id', label: 'Jabatan', section: 'employment' },
+            { field: 'employee_status', label: 'Status Karyawan', section: 'employment' },
+            { field: 'join_date', label: 'Tanggal Masuk', section: 'employment' },
         ];
 
         const missingFields = requiredFields.filter(({ field }) => !data[field] || data[field] === '');
@@ -130,7 +140,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
     const addFamilyMember = () => {
         setData('family_data', [...data.family_data, {
             full_name: '',
-            relationship: 'Father',
+            relationship: 'Ayah',
             birth_date: '',
             id_number: '',
             gender: 'male',
@@ -152,7 +162,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
     const addEmergencyContact = () => {
         setData('emergency_contacts', [...data.emergency_contacts, {
             name: '',
-            relationship: 'Father',
+            relationship: 'Ayah',
             phone: ''
         }]);
     };
@@ -234,17 +244,17 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
 
     return (
         <MekariLayout user={auth?.user}>
-            <Head title="Add Employee" />
+            <Head title="Tambah Karyawan" />
 
             <div className="space-y-6 max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Add New Employee</h1>
-                        <p className="text-sm text-gray-500">Fill in employee information below</p>
+                        <h1 className="text-2xl font-bold text-gray-900">Tambah Karyawan Baru</h1>
+                        <p className="text-sm text-gray-500">Lengkapi informasi karyawan di bawah ini</p>
                     </div>
                     <Link href="/employees" className="btn-secondary">
-                        Cancel
+                        Batal
                     </Link>
                 </div>
 
@@ -272,11 +282,11 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                     {activeSection === 'employment' && (
                         <div className="space-y-6">
                             <SectionHeader
-                                title="Employment Data"
-                                description="Enter division and job information for the employee"
+                                title="Data Pekerjaan"
+                                description="Isi data organisasi dan penempatan karyawan"
                             />
                             <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="Company ID">
+                                <FormField label="Perusahaan">
                                     <input
                                         type="text"
                                         value="PT. Sinergi Asta Nusantara"
@@ -285,71 +295,60 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Division" required error={errors.center_id}>
+                                <FormField label="Divisi" required error={errors.center_id}>
                                     <select
                                         value={data.center_id}
                                         onChange={(e) => setData('center_id', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Division</option>
+                                        <option value="">Pilih Divisi</option>
                                         {centers.map((c) => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
                                         ))}
                                     </select>
                                 </FormField>
 
-                                <FormField label="Job Position" required error={errors.position_id}>
+                                <FormField label="Jabatan" required error={errors.position_id}>
                                     <select
                                         value={data.position_id}
                                         onChange={(e) => setData('position_id', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Position</option>
+                                        <option value="">Pilih Jabatan</option>
                                         {positions.map((p) => (
                                             <option key={p.id} value={p.id}>{p.name}</option>
                                         ))}
                                     </select>
                                 </FormField>
 
-                                <FormField label="Job Level" required error={errors.contract_id}>
+                                <FormField label="Status Karyawan" required error={errors.employee_status}>
                                     <select
-                                        value={data.contract_id}
-                                        onChange={(e) => setData('contract_id', e.target.value)}
+                                        value={data.employee_status}
+                                        onChange={(e) => setData('employee_status', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Job Level</option>
-                                        {contracts.map((c) => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
+                                        <option value="Aktif">Aktif</option>
+                                        <option value="Tidak Aktif">Tidak Aktif</option>
+                                        <option value="Cuti">Cuti</option>
+                                        <option value="Dinas Luar">Dinas Luar</option>
+                                        <option value="Masa Percobaan">Masa Percobaan</option>
                                     </select>
                                 </FormField>
 
-                                <FormField label="Employment Status" required error={errors.employment_status}>
-                                    <select
-                                        value={data.employment_status}
-                                        onChange={(e) => setData('employment_status', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        {employmentStatuses.map((status) => (
-                                            <option key={status} value={status}>{status}</option>
-                                        ))}
-                                    </select>
-                                </FormField>
-
-                                <FormField label="Branch" error={errors.department_id}>
+                                <FormField label="Cabang" error={errors.department_id}>
                                     <select
                                         value={data.department_id}
                                         onChange={(e) => setData('department_id', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Branch</option>
+                                        <option value="">Pilih Cabang</option>
                                         {departments.map((d) => (
                                             <option key={d.id} value={d.id}>{d.name}</option>
                                         ))}
                                     </select>
                                 </FormField>
 
-                                <FormField label="Join Date" required error={errors.join_date}>
+                                <FormField label="Tanggal Masuk" required error={errors.join_date}>
                                     <input
                                         type="date"
                                         value={data.join_date}
@@ -358,7 +357,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Max Leave Allowed" error={errors.max_leave_allowed}>
+                                <FormField label="Maksimal Cuti" error={errors.max_leave_allowed}>
                                     <input
                                         type="number"
                                         value={data.max_leave_allowed}
@@ -376,27 +375,27 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                     {activeSection === 'personal' && (
                         <div className="space-y-6">
                             <SectionHeader
-                                title="Personal Data"
-                                description="Enter personal and identity information"
+                                title="Data Pribadi"
+                                description="Isi identitas dan informasi pribadi karyawan"
                             />
                             <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="First Name" required error={errors.first_name}>
+                                <FormField label="Nama Depan" required error={errors.first_name}>
                                     <input
                                         type="text"
                                         value={data.first_name}
                                         onChange={(e) => setData('first_name', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter first name"
+                                        placeholder="Masukkan nama depan"
                                     />
                                 </FormField>
 
-                                <FormField label="Last Name" error={errors.last_name}>
+                                <FormField label="Nama Belakang" error={errors.last_name}>
                                     <input
                                         type="text"
                                         value={data.last_name}
                                         onChange={(e) => setData('last_name', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter last name"
+                                        placeholder="Masukkan nama belakang"
                                     />
                                 </FormField>
 
@@ -410,7 +409,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Phone Number" error={errors.mobile_number}>
+                                <FormField label="Nomor Telepon" error={errors.mobile_number}>
                                     <input
                                         type="tel"
                                         value={data.mobile_number}
@@ -420,18 +419,18 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Gender" required error={errors.gender}>
+                                <FormField label="Jenis Kelamin" required error={errors.gender}>
                                     <select
                                         value={data.gender}
                                         onChange={(e) => setData('gender', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
+                                        <option value="male">Laki-laki</option>
+                                        <option value="female">Perempuan</option>
                                     </select>
                                 </FormField>
 
-                                <FormField label="Identity Type" error={errors.identity_type}>
+                                <FormField label="Jenis Identitas" error={errors.identity_type}>
                                     <select
                                         value={data.identity_type}
                                         onChange={(e) => setData('identity_type', e.target.value)}
@@ -443,17 +442,17 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </select>
                                 </FormField>
 
-                                <FormField label="Identity Number" error={errors.identity_number}>
+                                <FormField label="Nomor Identitas" error={errors.identity_number}>
                                     <input
                                         type="text"
                                         value={data.identity_number}
                                         onChange={(e) => setData('identity_number', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter identity number"
+                                        placeholder="Masukkan nomor identitas"
                                     />
                                 </FormField>
 
-                                <FormField label="Identity Expired Date" error={errors.identity_expired_date}>
+                                <FormField label="Masa Berlaku Identitas" error={errors.identity_expired_date}>
                                     <div className="flex items-center gap-3">
                                         <input
                                             type="date"
@@ -472,12 +471,12 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                 }}
                                                 className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                                             />
-                                            Permanent
+                                            Berlaku seumur hidup
                                         </label>
                                     </div>
                                 </FormField>
 
-                                <FormField label="Birth Place" error={errors.birth_place}>
+                                <FormField label="Tempat Lahir" error={errors.birth_place}>
                                     <input
                                         type="text"
                                         value={data.birth_place}
@@ -487,7 +486,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Birth Date" error={errors.birth_date}>
+                                <FormField label="Tanggal Lahir" error={errors.birth_date}>
                                     <input
                                         type="date"
                                         value={data.birth_date}
@@ -496,7 +495,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Postal Code" error={errors.postal_code}>
+                                <FormField label="Kode Pos" error={errors.postal_code}>
                                     <input
                                         type="text"
                                         value={data.postal_code}
@@ -506,7 +505,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Photo" error={errors.profile_photo}>
+                                <FormField label="Foto" error={errors.profile_photo}>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -515,13 +514,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Address" error={errors.address} className="md:col-span-2">
+                                <FormField label="Alamat" error={errors.address} className="md:col-span-2">
                                     <textarea
                                         value={data.address}
                                         onChange={(e) => setData('address', e.target.value)}
                                         className="form-input"
                                         rows={3}
-                                        placeholder="Enter full address"
+                                        placeholder="Masukkan alamat lengkap"
                                     />
                                 </FormField>
                             </div>
@@ -535,15 +534,15 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <SectionHeader
-                                        title="Family Data"
-                                        description="Add family members information"
+                                        title="Data Keluarga"
+                                        description="Tambahkan informasi anggota keluarga"
                                     />
                                     <button
                                         type="button"
                                         onClick={addFamilyMember}
                                         className="btn-secondary text-sm"
                                     >
-                                        + Add Family Member
+                                        + Tambah Anggota Keluarga
                                     </button>
                                 </div>
 
@@ -553,12 +552,12 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Full Name</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Relationship</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Birth Date</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID Number</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gender</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Lengkap</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hubungan</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Lahir</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Identitas</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis Kelamin</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pekerjaan</th>
                                                     <th className="px-4 py-3"></th>
                                                 </tr>
                                             </thead>
@@ -572,7 +571,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={member.full_name}
                                                                 onChange={(e) => updateFamilyMember(index, 'full_name', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Full name"
+                                                                placeholder="Nama lengkap"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -600,7 +599,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={member.id_number}
                                                                 onChange={(e) => updateFamilyMember(index, 'id_number', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="ID number"
+                                                                placeholder="Nomor identitas"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -609,8 +608,8 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 onChange={(e) => updateFamilyMember(index, 'gender', e.target.value)}
                                                                 className="form-input text-sm py-1"
                                                             >
-                                                                <option value="male">Male</option>
-                                                                <option value="female">Female</option>
+                                                                <option value="male">Laki-laki</option>
+                                                                <option value="female">Perempuan</option>
                                                             </select>
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -619,7 +618,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={member.job}
                                                                 onChange={(e) => updateFamilyMember(index, 'job', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Job"
+                                                                placeholder="Pekerjaan"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -640,13 +639,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                        <p className="text-gray-500">No family members added yet</p>
+                                        <p className="text-gray-500">Belum ada anggota keluarga ditambahkan</p>
                                         <button
                                             type="button"
                                             onClick={addFamilyMember}
                                             className="mt-2 text-red-600 hover:text-red-700 text-sm font-medium"
                                         >
-                                            + Add Family Member
+                                            + Tambah Anggota Keluarga
                                         </button>
                                     </div>
                                 )}
@@ -656,15 +655,15 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <SectionHeader
-                                        title="Emergency Contacts"
-                                        description="Add emergency contact information"
+                                        title="Kontak Darurat"
+                                        description="Tambahkan informasi kontak darurat"
                                     />
                                     <button
                                         type="button"
                                         onClick={addEmergencyContact}
                                         className="btn-secondary text-sm"
                                     >
-                                        + Add Contact
+                                        + Tambah Kontak
                                     </button>
                                 </div>
 
@@ -674,9 +673,9 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Relationship</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hubungan</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Telepon</th>
                                                     <th className="px-4 py-3"></th>
                                                 </tr>
                                             </thead>
@@ -690,7 +689,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={contact.name}
                                                                 onChange={(e) => updateEmergencyContact(index, 'name', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Contact name"
+                                                                placeholder="Nama kontak"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -731,13 +730,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                        <p className="text-gray-500">No emergency contacts added yet</p>
+                                        <p className="text-gray-500">Belum ada kontak darurat ditambahkan</p>
                                         <button
                                             type="button"
                                             onClick={addEmergencyContact}
                                             className="mt-2 text-red-600 hover:text-red-700 text-sm font-medium"
                                         >
-                                            + Add Emergency Contact
+                                            + Tambah Kontak Darurat
                                         </button>
                                     </div>
                                 )}
@@ -752,15 +751,15 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <SectionHeader
-                                        title="Education History"
-                                        description="Add formal education background"
+                                        title="Riwayat Pendidikan"
+                                        description="Tambahkan riwayat pendidikan formal"
                                     />
                                     <button
                                         type="button"
                                         onClick={addEducation}
                                         className="btn-secondary text-sm"
                                     >
-                                        + Add Education
+                                        + Tambah Pendidikan
                                     </button>
                                 </div>
 
@@ -770,11 +769,11 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Institution Name</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Major</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Year</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Year</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenjang</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Institusi</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jurusan</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tahun Mulai</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tahun Selesai</th>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">GPA</th>
                                                     <th className="px-4 py-3"></th>
                                                 </tr>
@@ -800,7 +799,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={edu.institution}
                                                                 onChange={(e) => updateEducation(index, 'institution', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Institution name"
+                                                                placeholder="Nama institusi"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -809,7 +808,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={edu.major}
                                                                 onChange={(e) => updateEducation(index, 'major', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Major"
+                                                                placeholder="Jurusan"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -857,13 +856,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                        <p className="text-gray-500">No education history added yet</p>
+                                        <p className="text-gray-500">Belum ada riwayat pendidikan ditambahkan</p>
                                         <button
                                             type="button"
                                             onClick={addEducation}
                                             className="mt-2 text-red-600 hover:text-red-700 text-sm font-medium"
                                         >
-                                            + Add Education
+                                            + Tambah Pendidikan
                                         </button>
                                     </div>
                                 )}
@@ -873,15 +872,15 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <SectionHeader
-                                        title="Training & Courses"
-                                        description="Add training and certification courses"
+                                        title="Pelatihan & Kursus"
+                                        description="Tambahkan pelatihan dan sertifikasi yang dimiliki"
                                     />
                                     <button
                                         type="button"
                                         onClick={addTrainingCourse}
                                         className="btn-secondary text-sm"
                                     >
-                                        + Add Training
+                                        + Tambah Pelatihan
                                     </button>
                                 </div>
 
@@ -891,13 +890,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Held By</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fee</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Certificate</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Penyelenggara</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Mulai</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Selesai</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durasi</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Biaya</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sertifikat</th>
                                                     <th className="px-4 py-3"></th>
                                                 </tr>
                                             </thead>
@@ -911,7 +910,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={course.name}
                                                                 onChange={(e) => updateTrainingCourse(index, 'name', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Training name"
+                                                                placeholder="Nama pelatihan"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -920,7 +919,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={course.held_by}
                                                                 onChange={(e) => updateTrainingCourse(index, 'held_by', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Organizer"
+                                                                placeholder="Penyelenggara"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -945,7 +944,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={course.duration}
                                                                 onChange={(e) => updateTrainingCourse(index, 'duration', e.target.value)}
                                                                 className="form-input text-sm py-1 w-20"
-                                                                placeholder="Days"
+                                                                placeholder="Hari"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -983,13 +982,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                        <p className="text-gray-500">No training or courses added yet</p>
+                                        <p className="text-gray-500">Belum ada pelatihan atau kursus ditambahkan</p>
                                         <button
                                             type="button"
                                             onClick={addTrainingCourse}
                                             className="mt-2 text-red-600 hover:text-red-700 text-sm font-medium"
                                         >
-                                            + Add Training
+                                            + Tambah Pelatihan
                                         </button>
                                     </div>
                                 )}
@@ -999,15 +998,15 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
                                     <SectionHeader
-                                        title="Working Experience"
-                                        description="Add previous work experience"
+                                        title="Pengalaman Kerja"
+                                        description="Tambahkan pengalaman kerja sebelumnya"
                                     />
                                     <button
                                         type="button"
                                         onClick={addWorkExperience}
                                         className="btn-secondary text-sm"
                                     >
-                                        + Add Experience
+                                        + Tambah Pengalaman
                                     </button>
                                 </div>
 
@@ -1017,10 +1016,10 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Company</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Perusahaan</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Posisi</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dari</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sampai</th>
                                                     <th className="px-4 py-3"></th>
                                                 </tr>
                                             </thead>
@@ -1034,7 +1033,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={exp.company}
                                                                 onChange={(e) => updateWorkExperience(index, 'company', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Company name"
+                                                                placeholder="Nama perusahaan"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -1043,7 +1042,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                                                 value={exp.position}
                                                                 onChange={(e) => updateWorkExperience(index, 'position', e.target.value)}
                                                                 className="form-input text-sm py-1"
-                                                                placeholder="Position"
+                                                                placeholder="Posisi"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-3">
@@ -1080,13 +1079,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                                        <p className="text-gray-500">No work experience added yet</p>
+                                        <p className="text-gray-500">Belum ada pengalaman kerja ditambahkan</p>
                                         <button
                                             type="button"
                                             onClick={addWorkExperience}
                                             className="mt-2 text-red-600 hover:text-red-700 text-sm font-medium"
                                         >
-                                            + Add Work Experience
+                                            + Tambah Pengalaman Kerja
                                         </button>
                                     </div>
                                 )}
@@ -1098,15 +1097,14 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                     {activeSection === 'payroll' && (
                         <div className="space-y-6">
                             <SectionHeader
-                                title="Payroll Information"
-                                description="Enter salary and tax configuration"
+                                title="Info Penggajian"
+                                description="Lengkapi pengaturan gaji, pajak, BPJS, dan rekening bank"
                             />
 
-                            {/* Basic Salary */}
-                            <div className="p-4 bg-gray-50 rounded-lg">
-                                <div className="flex items-center justify-between">
+                            <div className="rounded-2xl border border-gray-200 bg-gradient-to-r from-slate-50 to-white p-5 shadow-sm">
+                                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-500">Basic Salary</p>
+                                        <p className="text-sm font-medium text-gray-500">Gaji Pokok</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className="text-2xl font-bold text-gray-900">
                                                 Rp {Number(data.basic_salary || 0).toLocaleString('id-ID')}
@@ -1120,7 +1118,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             onChange={(e) => setData('basic_salary', e.target.value)}
                                             className="form-input w-48"
                                             min="0"
-                                            placeholder="Enter amount"
+                                            placeholder="Masukkan nominal"
                                         />
                                     </FormField>
                                 </div>
@@ -1139,71 +1137,59 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     </select>
                                 </FormField>
 
-                                <FormField label="Tax Configuration" error={errors.tax_configuration}>
+                                <FormField label="Konfigurasi Pajak" error={errors.tax_configuration}>
                                     <select
                                         value={data.tax_configuration}
                                         onChange={(e) => setData('tax_configuration', e.target.value)}
                                         className="form-input"
                                     >
                                         {taxConfigs.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>
                                 </FormField>
                             </div>
 
-                            {/* Prorate Type - Full Width */}
-                            <FormField label="Prorate Type" error={errors.prorate_type}>
-                                <select
-                                    value={data.prorate_type}
-                                    onChange={(e) => setData('prorate_type', e.target.value)}
-                                    className="form-input"
-                                >
-                                    {prorateTypes.map((opt) => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                            </FormField>
-
-                            {/* Count National Holiday Checkbox */}
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    id="count_national_holiday"
-                                    checked={data.count_national_holiday}
-                                    onChange={(e) => setData('count_national_holiday', e.target.checked)}
-                                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
-                                />
-                                <label htmlFor="count_national_holiday" className="text-sm text-gray-700">
-                                    Count national holiday as a working day
-                                </label>
-                            </div>
-
                             <div className="grid md:grid-cols-3 gap-6">
-                                <FormField label="Type Salary" error={errors.salary_type}>
+                                <FormField label="Tipe Prorata" error={errors.prorate_type}>
+                                    <select
+                                        value={data.prorate_type}
+                                        onChange={(e) => setData('prorate_type', e.target.value)}
+                                        className="form-input"
+                                    >
+                                        {prorateTypeOptions.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                </FormField>
+
+                                <FormField label="Tipe Gaji" error={errors.salary_type}>
                                     <select
                                         value={data.salary_type}
                                         onChange={(e) => setData('salary_type', e.target.value)}
                                         className="form-input"
                                     >
                                         {salaryTypes.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
                                         ))}
                                     </select>
                                 </FormField>
 
-                                <FormField label="Salary Configuration" error={errors.salary_configuration}>
+                                <FormField label="Konfigurasi Gaji" error={errors.salary_configuration}>
                                     <select
                                         value={data.salary_configuration}
                                         onChange={(e) => setData('salary_configuration', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="Taxable">Taxable</option>
-                                        <option value="Non Taxable">Non Taxable</option>
+                                        {salaryConfigurationOptions.map((opt) => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
                                     </select>
                                 </FormField>
+                            </div>
 
-                                <FormField label="Taxable Date" error={errors.taxable_date}>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField label="Tanggal Mulai Pajak" error={errors.taxable_date}>
                                     <input
                                         type="date"
                                         value={data.taxable_date}
@@ -1211,79 +1197,18 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                         className="form-input"
                                     />
                                 </FormField>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="Overtime Status" error={errors.overtime_status}>
-                                    <select
-                                        value={data.overtime_status}
-                                        onChange={(e) => setData('overtime_status', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="Eligible">Eligible</option>
-                                        <option value="Not Eligible">Not Eligible</option>
-                                    </select>
-                                </FormField>
-
-                                <FormField label="Employee Tax Status" error={errors.employee_tax_status}>
-                                    <select
-                                        value={data.employee_tax_status}
-                                        onChange={(e) => setData('employee_tax_status', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="Pegawai Tetap">Pegawai Tetap</option>
-                                        <option value="Pegawai Tidak Tetap">Pegawai Tidak Tetap</option>
-                                        <option value="Bukan Pegawai">Bukan Pegawai</option>
-                                    </select>
-                                </FormField>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="JHT Configuration" error={errors.jht_configuration}>
-                                    <select
-                                        value={data.jht_configuration}
-                                        onChange={(e) => setData('jht_configuration', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="Default">Default</option>
-                                        <option value="Custom">Custom</option>
-                                    </select>
-                                </FormField>
-
-                                <FormField label="BPJS Kesehatan Configuration" error={errors.bpjs_kesehatan_config}>
-                                    <select
-                                        value={data.bpjs_kesehatan_config}
-                                        onChange={(e) => setData('bpjs_kesehatan_config', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="By Company">By Company</option>
-                                        <option value="By Employee">By Employee</option>
-                                    </select>
-                                </FormField>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="Jaminan Pensiun Configuration" error={errors.jaminan_pensiun_config}>
-                                    <select
-                                        value={data.jaminan_pensiun_config}
-                                        onChange={(e) => setData('jaminan_pensiun_config', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="Default">Default</option>
-                                        <option value="Custom">Custom</option>
-                                    </select>
-                                </FormField>
-
-                                <FormField label="NPP BPJS Ketenagakerjaan" error={errors.npp_bpjs_ketenagakerjaan}>
-                                    <select
-                                        value={data.npp_bpjs_ketenagakerjaan}
-                                        onChange={(e) => setData('npp_bpjs_ketenagakerjaan', e.target.value)}
-                                        className="form-input"
-                                    >
-                                        <option value="Default">Default</option>
-                                        <option value="Custom">Custom</option>
-                                    </select>
-                                </FormField>
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <label htmlFor="count_holiday_as_working_day" className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            id="count_holiday_as_working_day"
+                                            checked={data.count_holiday_as_working_day}
+                                            onChange={(e) => setData('count_holiday_as_working_day', e.target.checked)}
+                                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                                        />
+                                        <span>Hitung hari libur nasional sebagai hari kerja</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="grid md:grid-cols-3 gap-6">
@@ -1293,7 +1218,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                         value={data.bpjs_ketenagakerjaan}
                                         onChange={(e) => setData('bpjs_ketenagakerjaan', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter BPJS Ketenagakerjaan number"
+                                        placeholder="Masukkan nomor BPJS Ketenagakerjaan"
                                     />
                                 </FormField>
 
@@ -1303,11 +1228,11 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                         value={data.bpjs_kesehatan}
                                         onChange={(e) => setData('bpjs_kesehatan', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter BPJS Kesehatan number"
+                                        placeholder="Masukkan nomor BPJS Kesehatan"
                                     />
                                 </FormField>
 
-                                <FormField label="BPJS Kesehatan Family" error={errors.bpjs_kesehatan_family}>
+                                <FormField label="Jumlah Keluarga BPJS Kesehatan" error={errors.bpjs_kesehatan_family}>
                                     <select
                                         value={data.bpjs_kesehatan_family}
                                         onChange={(e) => setData('bpjs_kesehatan_family', e.target.value)}
@@ -1331,43 +1256,21 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Currency" error={errors.currency}>
+                                <FormField label="Mata Uang" error={errors.currency}>
                                     <select
                                         value={data.currency}
                                         onChange={(e) => setData('currency', e.target.value)}
                                         className="form-input"
                                     >
                                         {currencyOptions.map((opt) => (
-                                            <option key={opt} value={opt}>{opt}</option>
+                                            <option key={opt} value={opt}>{currencyOptionLabels[opt] || opt}</option>
                                         ))}
                                     </select>
                                 </FormField>
                             </div>
 
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="Beginning Netto" error={errors.beginning_netto}>
-                                    <input
-                                        type="number"
-                                        value={data.beginning_netto}
-                                        onChange={(e) => setData('beginning_netto', e.target.value)}
-                                        className="form-input"
-                                        min="0"
-                                    />
-                                </FormField>
-
-                                <FormField label="PPH21 Paid" error={errors.pph21_paid}>
-                                    <input
-                                        type="number"
-                                        value={data.pph21_paid}
-                                        onChange={(e) => setData('pph21_paid', e.target.value)}
-                                        className="form-input"
-                                        min="0"
-                                    />
-                                </FormField>
-                            </div>
-
                             <div className="grid md:grid-cols-3 gap-6">
-                                <FormField label="BPJS Ketenagakerjaan Date" error={errors.bpjs_ketenagakerjaan_date}>
+                                <FormField label="Tanggal BPJS Ketenagakerjaan" error={errors.bpjs_ketenagakerjaan_date}>
                                     <input
                                         type="date"
                                         value={data.bpjs_ketenagakerjaan_date}
@@ -1376,7 +1279,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="BPJS Kesehatan Date" error={errors.bpjs_kesehatan_date}>
+                                <FormField label="Tanggal BPJS Kesehatan" error={errors.bpjs_kesehatan_date}>
                                     <input
                                         type="date"
                                         value={data.bpjs_kesehatan_date}
@@ -1385,7 +1288,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                     />
                                 </FormField>
 
-                                <FormField label="Jaminan Pensiun Date" error={errors.jaminan_pensiun_date}>
+                                <FormField label="Tanggal Jaminan Pensiun" error={errors.jaminan_pensiun_date}>
                                     <input
                                         type="date"
                                         value={data.jaminan_pensiun_date}
@@ -1395,95 +1298,19 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                 </FormField>
                             </div>
 
-                            {/* Payroll Components Section */}
-                            <div className="pt-6 border-t">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Payroll Component</h3>
-
-                                {data.payroll_components.length > 0 && (
-                                    <div className="space-y-4 mb-4">
-                                        {data.payroll_components.map((component, index) => (
-                                            <div key={index} className="border-b border-gray-200 pb-4">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <input
-                                                                type="text"
-                                                                value={component.name}
-                                                                onChange={(e) => {
-                                                                    const updated = [...data.payroll_components];
-                                                                    updated[index].name = e.target.value;
-                                                                    setData('payroll_components', updated);
-                                                                }}
-                                                                className="text-sm font-medium text-gray-700 border-none bg-transparent p-0 focus:ring-0 focus:outline-none"
-                                                                placeholder="Component Name"
-                                                            />
-                                                            {component.type === 'formula' && (
-                                                                <span className="px-2 py-0.5 text-xs bg-red-700 text-white rounded">Formula</span>
-                                                            )}
-                                                        </div>
-                                                        <input
-                                                            type="number"
-                                                            value={component.amount}
-                                                            onChange={(e) => {
-                                                                const updated = [...data.payroll_components];
-                                                                updated[index].amount = e.target.value;
-                                                                setData('payroll_components', updated);
-                                                            }}
-                                                            className="form-input w-full text-gray-600"
-                                                            min="0"
-                                                            placeholder="0"
-                                                        />
-                                                        {component.type === 'formula' && component.formula && (
-                                                            <p className="text-xs text-gray-500 mt-1">Formula: {component.formula}</p>
-                                                        )}
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const updated = data.payroll_components.filter((_, i) => i !== index);
-                                                            setData('payroll_components', updated);
-                                                        }}
-                                                        className="p-2 text-gray-400 hover:text-red-600 border border-gray-200 rounded ml-4"
-                                                    >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setData('payroll_components', [
-                                            ...data.payroll_components,
-                                            { name: '', amount: 0, type: 'formula', formula: 'basic_salary * 0.1' }
-                                        ]);
-                                    }}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 uppercase"
-                                >
-                                    Add New Component
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Bank Info */}
-                    {activeSection === 'bank' && (
-                        <div className="space-y-6">
-                            <SectionHeader
-                                title="Bank Information"
-                                description="Enter bank account details for salary transfer"
-                            />
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <FormField label="Bank Name" error={errors.bank_name}>
+                            <div className="pt-6 border-t border-gray-100">
+                                <SectionHeader
+                                    title="Informasi Bank"
+                                    description="Gunakan rekening ini untuk transfer gaji karyawan"
+                                />
+                                <div className="mt-6 grid md:grid-cols-2 gap-6">
+                                    <FormField label="Nama Bank" error={errors.bank_name}>
                                     <select
                                         value={data.bank_name}
                                         onChange={(e) => setData('bank_name', e.target.value)}
                                         className="form-input"
                                     >
-                                        <option value="">Select Bank</option>
+                                        <option value="">Pilih Bank</option>
                                         <option value="BCA">BCA</option>
                                         <option value="Mandiri">Mandiri</option>
                                         <option value="BNI">BNI</option>
@@ -1491,44 +1318,45 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                         <option value="CIMB Niaga">CIMB Niaga</option>
                                         <option value="Danamon">Danamon</option>
                                         <option value="Permata">Permata</option>
-                                        <option value="Other">Other</option>
+                                        <option value="Other">Lainnya</option>
                                     </select>
                                 </FormField>
 
-                                <FormField label="Account Number" error={errors.bank_account_number}>
+                                    <FormField label="Nomor Rekening" error={errors.bank_account_number}>
                                     <input
                                         type="text"
                                         value={data.bank_account_number}
                                         onChange={(e) => setData('bank_account_number', e.target.value)}
                                         className="form-input"
-                                        placeholder="Enter account number"
+                                        placeholder="Masukkan nomor rekening"
                                     />
                                 </FormField>
 
-                                <FormField label="Account Holder Name" error={errors.bank_account_holder} className="md:col-span-2">
+                                    <FormField label="Nama Pemilik Rekening" error={errors.bank_account_holder} className="md:col-span-2">
                                     <input
                                         type="text"
                                         value={data.bank_account_holder}
                                         onChange={(e) => setData('bank_account_holder', e.target.value)}
                                         className="form-input"
-                                        placeholder="Name as per bank account"
+                                        placeholder="Masukkan nama sesuai rekening"
                                     />
                                 </FormField>
                             </div>
                         </div>
+                    </div>
                     )}
 
                     {/* Submit Button */}
                     <div className="flex justify-end gap-3 pt-6 border-t">
                         <Link href="/employees" className="btn-secondary">
-                            Cancel
+                            Batal
                         </Link>
                         <button
                             type="submit"
                             disabled={processing}
                             className="btn-primary"
                         >
-                            {processing ? 'Adding...' : 'Add Employee'}
+                            {processing ? 'Menyimpan...' : 'Tambah Karyawan'}
                         </button>
                     </div>
                 </form>
@@ -1543,13 +1371,13 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
-                                Missing Required Fields
+                                Data Wajib Belum Lengkap
                             </h3>
                         </div>
 
                         <div className="p-6">
                             <p className="text-gray-600 mb-4">
-                                Please fill in the following mandatory fields before adding the employee:
+                                Mohon lengkapi field wajib berikut sebelum menambahkan karyawan:
                             </p>
                             <ul className="space-y-2">
                                 {validationErrors.map(({ field, label, section }) => (
@@ -1565,7 +1393,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                                         </svg>
                                         <span className="font-medium">{label}</span>
-                                        <span className="text-gray-400 text-sm">({section === 'personal' ? 'Personal Data' : 'Employment Data'})</span>
+                                        <span className="text-gray-400 text-sm">({section === 'personal' ? 'Data Pribadi' : 'Data Pekerjaan'})</span>
                                     </li>
                                 ))}
                             </ul>
@@ -1576,7 +1404,7 @@ export default function EmployeeCreate({ auth, departments = [], positions = [],
                                 onClick={() => setShowValidationModal(false)}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                             >
-                                Okay, Got It
+                                Mengerti
                             </button>
                         </div>
                     </div>

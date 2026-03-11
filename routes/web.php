@@ -29,6 +29,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('employees', EmployeeController::class);
     Route::get('/employees-export', [EmployeeController::class, 'export'])->name('employees.export');
     Route::post('/employees-bulk-delete', [EmployeeController::class, 'bulkDestroy'])->name('employees.bulkDestroy');
+    Route::get('/employees-bulk-add', [EmployeeController::class, 'bulkCreate'])->name('employees.bulkCreate');
+    Route::post('/employees-bulk-store', [EmployeeController::class, 'bulkStore'])->name('employees.bulkStore');
 
     // ========================================
     // RECRUITMENT — Talent Acquisition
@@ -37,9 +39,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [RecruitmentController::class, 'index'])->name('index');
         Route::post('/candidates', [RecruitmentController::class, 'store'])->name('store');
         Route::post('/move', [RecruitmentController::class, 'moveStage'])->name('move');
-        Route::get('/onboarding', [RecruitmentController::class, 'onboarding'])->name('onboarding');
-        Route::post('/onboarding/store', [RecruitmentController::class, 'storeOnboarding'])->name('onboarding.store');
-        Route::post('/checklist', [RecruitmentController::class, 'updateChecklist'])->name('checklist');
     });
 
     // ========================================

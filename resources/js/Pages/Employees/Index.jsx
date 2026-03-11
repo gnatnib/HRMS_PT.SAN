@@ -95,7 +95,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
 
     return (
         <MekariLayout>
-            <Head title="Employees" />
+            <Head title="Karyawan" />
 
             <div className="space-y-5 px-6 py-6 max-w-7xl mx-auto">
                 {flash?.success && (
@@ -114,7 +114,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                         <div className="absolute right-20 -bottom-10 w-24 h-24 bg-white/5 rounded-full" />
                     </div>
                     <div className="relative px-8 py-6">
-                        <h1 className="text-2xl font-semibold text-white mb-1">Employees</h1>
+                        <h1 className="text-2xl font-semibold text-white mb-1">Karyawan</h1>
                         <p className="text-slate-400 text-sm">PT. SINERGI ASTA NUSANTARA</p>
                     </div>
                 </div>
@@ -130,10 +130,10 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                             </svg>
                         </div>
-                        <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">ADD EMPLOYEE</span>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-blue-600">TAMBAH KARYAWAN</span>
                     </Link>
                     <Link
-                        href="#"
+                        href="/employees-bulk-add"
                         className="flex flex-col items-center justify-center p-5 bg-white border border-gray-200 rounded-xl hover:border-purple-300 hover:shadow-md transition-all group"
                     >
                         <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center mb-2 group-hover:bg-purple-100 transition-colors">
@@ -141,7 +141,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-                        <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600">BULK ADD EMPLOYEE</span>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600">BULK ADD KARYAWAN</span>
                     </Link>
                     <button
                         onClick={handleExport}
@@ -153,7 +153,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                             </svg>
                         </div>
                         <span className="text-xs font-medium text-gray-700 group-hover:text-green-600">
-                            EXPORT {hasActiveFilters ? '(FILTERED)' : 'ALL'}
+                            EXPORT CSV {hasActiveFilters ? '(FILTER)' : 'ALL'}
                         </span>
                     </button>
                 </div>
@@ -165,14 +165,14 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                             </svg>
-                            <span className="text-sm font-medium text-gray-700">Filters</span>
+                            <span className="text-sm font-medium text-gray-700">Filter</span>
                             {hasActiveFilters && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Active</span>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Aktif</span>
                             )}
                         </div>
                         {hasActiveFilters && (
                             <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-red-600 transition-colors">
-                                Clear all
+                                Hapus semua
                             </button>
                         )}
                     </div>
@@ -184,42 +184,42 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 onChange={(e) => { setStatus(e.target.value); applyFilters({ status: e.target.value }); }}
                                 className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             >
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="terminated">Terminated</option>
-                                <option value="probation">Probation</option>
-                                <option value="on_leave">On Leave / Sick</option>
-                                <option value="business_trip">Business Trip</option>
+                                <option value="">Semua Status</option>
+                                <option value="active">Aktif</option>
+                                <option value="terminated">Tidak Aktif</option>
+                                <option value="probation">Masa Percobaan</option>
+                                <option value="on_leave">Cuti / Sakit</option>
+                                <option value="business_trip">Dinas Luar</option>
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-500 mb-1 font-medium">Branch</label>
+                            <label className="block text-xs text-gray-500 mb-1 font-medium">Cabang</label>
                             <select
                                 value={branch}
                                 onChange={(e) => { setBranch(e.target.value); applyFilters({ branch: e.target.value }); }}
                                 className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                             >
-                                <option value="">All Branch</option>
-                                {centers.map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-500 mb-1 font-medium">Division</label>
-                            <select
-                                value={division}
-                                onChange={(e) => { setDivision(e.target.value); applyFilters({ division: e.target.value }); }}
-                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            >
-                                <option value="">All Division</option>
+                                <option value="">Semua Cabang</option>
                                 {departments.map((d) => (
                                     <option key={d.id} value={d.id}>{d.name}</option>
                                 ))}
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs text-gray-500 mb-1 font-medium">Search</label>
+                            <label className="block text-xs text-gray-500 mb-1 font-medium">Divisi</label>
+                            <select
+                                value={division}
+                                onChange={(e) => { setDivision(e.target.value); applyFilters({ division: e.target.value }); }}
+                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            >
+                                <option value="">Semua Divisi</option>
+                                {centers.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1 font-medium">Cari</label>
                             <div className="relative">
                                 <input
                                     type="text"
@@ -227,7 +227,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     className="w-full px-3 py-2 pr-8 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                    placeholder="Name, ID, or email..."
+                                    placeholder="Nama, ID, atau email..."
                                 />
                                 <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -259,7 +259,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
-                                Delete Selected
+                                Hapus Terpilih
                             </button>
                         </div>
                     </div>
@@ -279,14 +279,13 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                             className="rounded border-gray-300"
                                         />
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Photo</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Full Name</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Employee ID</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Division</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Job Position</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Job Level</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium">Branch</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium">Actions</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Foto</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Nama Lengkap</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">ID Karyawan</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Divisi</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Jabatan</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium">Cabang</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -332,25 +331,22 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                 {emp.employee_code || '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.department?.name || '-'}
+                                                {emp.center?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
                                                 {emp.position?.name
-                                                    ? `${emp.position.name}${emp.department?.name ? ` (${emp.department.name})` : ''}`
+                                                    ? `${emp.position.name}${emp.center?.name ? ` (${emp.center.name})` : ''}`
                                                     : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.contract?.name || '-'}
-                                            </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">
-                                                {emp.center?.name || '-'}
+                                                {emp.department?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center justify-end gap-1">
                                                     <Link
                                                         href={`/employees/${emp.id}`}
                                                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="View"
+                                                        title="Lihat"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -369,7 +365,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                     <button
                                                         onClick={() => handleDelete(emp)}
                                                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Delete"
+                                                        title="Hapus"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -386,8 +382,8 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                 <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
-                                                <p className="text-gray-500 text-sm mb-1">No employees found</p>
-                                                <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Add one now →</Link>
+                                                <p className="text-gray-500 text-sm mb-1">Belum ada data karyawan</p>
+                                                <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Tambah karyawan →</Link>
                                             </div>
                                         </td>
                                     </tr>
@@ -400,7 +396,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                     {employees.links && (
                         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
                             <p className="text-sm text-gray-500">
-                                Showing {employees.from || 0} to {employees.to || 0} of {employees.total || 0}
+                                Menampilkan {employees.from || 0} sampai {employees.to || 0} dari {employees.total || 0}
                             </p>
                             <div className="flex gap-1">
                                 {employees.links?.map((link, idx) => (
@@ -430,23 +426,23 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-green-600">{employeeStats.active}</p>
-                        <p className="text-xs text-gray-500 mt-1">Active</p>
+                        <p className="text-xs text-gray-500 mt-1">Aktif</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-red-600">{employeeStats.terminated}</p>
-                        <p className="text-xs text-gray-500 mt-1">Terminated</p>
+                        <p className="text-xs text-gray-500 mt-1">Tidak Aktif</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-blue-600">{employeeStats.probation}</p>
-                        <p className="text-xs text-gray-500 mt-1">Probation</p>
+                        <p className="text-xs text-gray-500 mt-1">Masa Percobaan</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-yellow-600">{employeeStats.on_leave}</p>
-                        <p className="text-xs text-gray-500 mt-1">On Leave</p>
+                        <p className="text-xs text-gray-500 mt-1">Cuti</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
                         <p className="text-xl font-bold text-teal-600">{employeeStats.business_trip}</p>
-                        <p className="text-xs text-gray-500 mt-1">Business Trip</p>
+                        <p className="text-xs text-gray-500 mt-1">Dinas Luar</p>
                     </div>
                 </div>
 

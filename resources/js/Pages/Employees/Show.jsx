@@ -13,7 +13,10 @@ export default function EmployeeShow({
 }) {
     const [activeTab, setActiveTab] = useState('general');
     const [activeSubTab, setActiveSubTab] = useState('employment');
-    const [isEditing, setIsEditing] = useState(false);
+
+    // Auto-enable editing if ?editing=1 is in the URL
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const [isEditing, setIsEditing] = useState(urlParams?.get('editing') === '1');
 
     const { data, setData, post, processing, errors } = useForm({
         _method: 'PUT',
@@ -22,15 +25,9 @@ export default function EmployeeShow({
         barcode: employee.barcode || '',
         center_id: employee.center_id || '',
         position_id: employee.position_id || '',
-        employee_status: (() => {
-            if (!employee.is_active) return 'Tidak Aktif';
-            const es = employee.employment_status;
-            if (es === 'Leave' || es === 'Sick' || es === 'Permission') return 'Cuti';
-            if (es === 'Business Trip') return 'Dinas Luar';
-            if (es === 'Probation') return 'Masa Percobaan';
-            if (es === 'Terminated') return 'Tidak Aktif';
-            return 'Aktif';
-        })(),
+        employee_status: employee.employment_status || 'Aktif',
+        status_reason: employee.status_reason || '',
+        status_notes: employee.status_notes || '',
         department_id: employee.department_id || '',
         join_date: employee.join_date || '',
 
@@ -81,11 +78,25 @@ export default function EmployeeShow({
     // Options arrays
     const employeeStatusOptions = [
         { value: 'Aktif', label: 'Aktif' },
-        { value: 'Tidak Aktif', label: 'Tidak Aktif' },
+        { value: 'Terminated', label: 'Terminated' },
+        { value: 'Izin', label: 'Izin' },
         { value: 'Cuti', label: 'Cuti' },
         { value: 'Dinas Luar', label: 'Dinas Luar' },
         { value: 'Masa Percobaan', label: 'Masa Percobaan' },
     ];
+
+    const statusReasonOptions = [
+        'Sakit',
+        'Acara Keluarga',
+        'Urusan Pribadi',
+        'Cuti Tahunan',
+        'Cuti Melahirkan',
+        'Perjalanan Dinas',
+        'Training/Pelatihan',
+        'Lainnya',
+    ];
+
+    const showReasonFields = ['Izin', 'Cuti', 'Dinas Luar'].includes(data.employee_status);
     const ptkpOptions = ['TK/0', 'TK/1', 'TK/2', 'TK/3', 'K/0', 'K/1', 'K/2', 'K/3'];
     const taxConfigs = [
         { value: 'Gross', label: 'Gross' },
@@ -459,7 +470,16 @@ export default function EmployeeShow({
                     </label>
                     <select
                         value={data.employee_status}
-                        onChange={(e) => setData('employee_status', e.target.value)}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setData(prev => ({
+                                ...prev,
+                                employee_status: val,
+                                ...(val === 'Aktif' || val === 'Terminated' || val === 'Masa Percobaan'
+                                    ? { status_reason: '', status_notes: '' }
+                                    : {}),
+                            }));
+                        }}
                         className="form-input w-full"
                         disabled={!isEditing}
                     >
@@ -468,6 +488,47 @@ export default function EmployeeShow({
                         ))}
                     </select>
                 </div>
+
+                {/* Reason & Notes — only for Izin / Cuti / Dinas Luar */}
+                {showReasonFields && (
+                    <>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Alasan</label>
+                            {isEditing ? (
+                                <select
+                                    value={data.status_reason}
+                                    onChange={(e) => setData('status_reason', e.target.value)}
+                                    className="form-input w-full"
+                                >
+                                    <option value="">Pilih Alasan</option>
+                                    {statusReasonOptions.map((r) => (
+                                        <option key={r} value={r}>{r}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
+                                    {employee.status_reason || '-'}
+                                </p>
+                            )}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-xs text-gray-500 mb-1">Catatan Tambahan</label>
+                            {isEditing ? (
+                                <textarea
+                                    value={data.status_notes}
+                                    onChange={(e) => setData('status_notes', e.target.value)}
+                                    className="form-input w-full"
+                                    rows={2}
+                                    placeholder="Tambahkan detail atau catatan..."
+                                />
+                            ) : (
+                                <p className="text-sm text-gray-900 border-b border-gray-200 pb-2">
+                                    {employee.status_notes || '-'}
+                                </p>
+                            )}
+                        </div>
+                    </>
+                )}
 
                 {/* Tanggal Masuk */}
                 <div>
@@ -1416,25 +1477,17 @@ export default function EmployeeShow({
                                 {employee.first_name} {employee.last_name || ''}
                             </h1>
                             {/* Status Badge */}
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${!employee.is_active
-                                    ? 'bg-red-100 text-red-700'
-                                    : employee.employment_status === 'Probation'
-                                        ? 'bg-blue-100 text-blue-700'
-                                        : employee.employment_status === 'Business Trip'
-                                            ? 'bg-teal-100 text-teal-700'
-                                            : ['Sick', 'Leave', 'Permission'].includes(employee.employment_status)
-                                                ? 'bg-yellow-100 text-yellow-700'
-                                                : 'bg-green-100 text-green-700'
-                                }`}>
-                                {!employee.is_active
-                                    ? 'Tidak Aktif'
-                                    : employee.employment_status === 'Probation'
-                                        ? 'Masa Percobaan'
-                                        : employee.employment_status === 'Business Trip'
-                                            ? 'Dinas Luar'
-                                            : ['Sick', 'Leave', 'Permission'].includes(employee.employment_status)
-                                                ? 'Cuti'
-                                                : 'Aktif'}
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                {
+                                    'Aktif': 'bg-green-100 text-green-700',
+                                    'Terminated': 'bg-red-100 text-red-700',
+                                    'Izin': 'bg-amber-100 text-amber-700',
+                                    'Cuti': 'bg-yellow-100 text-yellow-700',
+                                    'Dinas Luar': 'bg-teal-100 text-teal-700',
+                                    'Masa Percobaan': 'bg-blue-100 text-blue-700',
+                                }[employee.employment_status] || 'bg-gray-100 text-gray-700'
+                            }`}>
+                                {employee.employment_status || 'Aktif'}
                             </span>
                         </div>
                         <p className="text-sm text-gray-500">

@@ -19,6 +19,8 @@ class EmployeeController extends Controller
         $status = $request->get('status');
         $branch = $request->get('branch');
         $division = $request->get('division');
+        $perPage = min((int) ($request->get('per_page', 20)), 100);
+        if ($perPage < 1) $perPage = 20;
 
         $query = Employee::with([
             'position:id,name',
@@ -57,7 +59,7 @@ class EmployeeController extends Controller
             $query->where('center_id', $division);
         }
 
-        $employees = $query->orderBy('first_name')->paginate(20);
+        $employees = $query->orderBy('first_name')->paginate($perPage);
 
         // Get centers/branches
         $centers = [];
@@ -109,6 +111,7 @@ class EmployeeController extends Controller
                 'status' => $status,
                 'branch' => $branch,
                 'division' => $division,
+                'per_page' => $perPage,
             ],
         ]);
     }
@@ -312,8 +315,8 @@ class EmployeeController extends Controller
 
     public function edit(Employee $employee)
     {
-        // Redirect to show page - View and Edit are now merged
-        return redirect()->route('employees.show', $employee);
+        // Redirect to show page with editing flag
+        return redirect()->route('employees.show', ['employee' => $employee, 'editing' => 1]);
     }
 
     public function update(Request $request, Employee $employee)
@@ -674,12 +677,13 @@ class EmployeeController extends Controller
         }
 
         $query->where(function ($q) use ($search) {
+            // Full search term against each column and concatenated name
             $q->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
                 ->orWhere('employee_code', 'like', "%{$search}%")
                 ->orWhere('mobile_number', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere(DB::raw("TRIM(CONCAT(first_name, ' ', COALESCE(last_name, '')))"), 'like', "%{$search}%");
+                ->orWhereRaw("LOWER(TRIM(CONCAT(COALESCE(first_name,''), ' ', COALESCE(last_name,'')))) LIKE ?", ['%' . strtolower($search) . '%']);
         });
     }
 

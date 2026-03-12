@@ -42,6 +42,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [RecruitmentController::class, 'index'])->name('index');
         Route::post('/candidates', [RecruitmentController::class, 'store'])->name('store');
         Route::post('/move', [RecruitmentController::class, 'moveStage'])->name('move');
+        Route::post('/delete', [RecruitmentController::class, 'deleteCandidate'])->name('delete');
+        Route::get('/export', [RecruitmentController::class, 'exportCandidates'])->name('export');
     });
 
     // ========================================

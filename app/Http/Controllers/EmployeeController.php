@@ -497,17 +497,21 @@ class EmployeeController extends Controller
         }
 
         $filename = 'employees_' . now()->format('Y-m-d') . '.csv';
-        $handle = fopen('php://temp', 'w');
-        foreach ($csvData as $row) {
-            fputcsv($handle, $row);
-        }
-        rewind($handle);
-        $csv = stream_get_contents($handle);
-        fclose($handle);
 
-        return response($csv)
-            ->header('Content-Type', 'text/csv')
-            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        $callback = function () use ($csvData) {
+            $file = fopen('php://output', 'w');
+            // Write BOM for UTF-8 Excel compatibility
+            fwrite($file, "\xEF\xBB\xBF");
+            foreach ($csvData as $row) {
+                fputcsv($file, $row, ';'); // Semicolon delimiter for Excel auto-column formatting
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function bulkDestroy(Request $request)

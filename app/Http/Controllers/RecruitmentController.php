@@ -93,6 +93,81 @@ class RecruitmentController extends Controller
         return redirect()->back()->with('success', 'Kandidat dipindahkan ke ' . $validated['to_stage']);
     }
 
+    public function deleteCandidate(Request $request)
+    {
+        $validated = $request->validate([
+            'candidate_id' => 'required|integer',
+            'stage' => 'required|string|in:applied,screening,interview,offering,hired',
+        ]);
+
+        $candidates = Cache::get('recruitment_candidates', $this->getDefaultCandidates());
+
+        $found = false;
+        foreach ($candidates[$validated['stage']] as $key => $c) {
+            if ($c['id'] == $validated['candidate_id']) {
+                unset($candidates[$validated['stage']][$key]);
+                $found = true;
+                break;
+            }
+        }
+
+        if ($found) {
+            $candidates[$validated['stage']] = array_values($candidates[$validated['stage']]);
+            Cache::put('recruitment_candidates', $candidates, now()->addDays(30));
+            return redirect()->back()->with('success', 'Kandidat berhasil dihapus!');
+        }
+
+        return redirect()->back()->with('error', 'Kandidat tidak ditemukan.');
+    }
+
+    public function exportCandidates()
+    {
+        $candidates = Cache::get('recruitment_candidates', $this->getDefaultCandidates());
+        $stageLabels = [
+            'applied' => 'Applied',
+            'screening' => 'Screening',
+            'interview' => 'Interview',
+            'offering' => 'Offering',
+            'hired' => 'Hired',
+        ];
+
+        // Build rows
+        $rows = [];
+        $rows[] = ['No', 'Nama Kandidat', 'Posisi', 'Sumber', 'Tanggal Masuk', 'Status / Tahapan'];
+
+        $no = 1;
+        foreach ($stageLabels as $stage => $label) {
+            foreach ($candidates[$stage] ?? [] as $c) {
+                $rows[] = [
+                    $no++,
+                    $c['name'] ?? '',
+                    $c['position'] ?? '',
+                    $c['source'] ?? '',
+                    $c['date'] ?? '',
+                    $label,
+                ];
+            }
+        }
+
+        // Generate CSV with BOM for Excel compatibility
+        $filename = 'recruitment_candidates_' . now()->format('Y-m-d') . '.csv';
+
+        $callback = function () use ($rows) {
+            $file = fopen('php://output', 'w');
+            // Write BOM for UTF-8 Excel compatibility
+            fwrite($file, "\xEF\xBB\xBF");
+            foreach ($rows as $row) {
+                fputcsv($file, $row, ';'); // Semicolon delimiter for better Excel compatibility
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     private function getDefaultCandidates(): array
     {
         return [

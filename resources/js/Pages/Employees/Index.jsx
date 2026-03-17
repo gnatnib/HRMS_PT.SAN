@@ -8,6 +8,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
     const [status, setStatus] = useState(filters.status || '');
     const [branch, setBranch] = useState(filters.branch || '');
     const [division, setDivision] = useState(filters.division || '');
+    const [perPage, setPerPage] = useState(filters.per_page || 20);
     const [selectedIds, setSelectedIds] = useState([]);
 
     const employeeList = employees.data || [];
@@ -53,6 +54,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
             status: overrides.status ?? status,
             branch: overrides.branch ?? branch,
             division: overrides.division ?? division,
+            per_page: overrides.per_page ?? perPage,
         };
         // Remove empty params
         Object.keys(params).forEach(key => { if (!params[key]) delete params[key]; });
@@ -126,6 +128,56 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                         <h1 className="text-2xl font-semibold text-white mb-1">Employees</h1>
                         <p className="text-slate-400 text-sm">PT. SINERGI ASTA NUSANTARA</p>
                     </div>
+                </div>
+
+                {/* Stats Chart */}
+                <div className="bg-white rounded-xl border border-gray-200 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-900">Statistik Employee</h3>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">{employeeStats.total} Total</span>
+                    </div>
+                    {(() => {
+                        const total = employeeStats.total || 1;
+                        const segments = [
+                            { label: 'Aktif', count: employeeStats.active, color: 'bg-green-500', textColor: 'text-green-600', dotColor: 'bg-green-500' },
+                            { label: 'Terminated', count: employeeStats.terminated, color: 'bg-red-500', textColor: 'text-red-600', dotColor: 'bg-red-500' },
+                            { label: 'Izin', count: employeeStats.permission, color: 'bg-amber-500', textColor: 'text-amber-600', dotColor: 'bg-amber-500' },
+                            { label: 'Cuti', count: employeeStats.on_leave, color: 'bg-yellow-400', textColor: 'text-yellow-600', dotColor: 'bg-yellow-400' },
+                            { label: 'Masa Percobaan', count: employeeStats.probation, color: 'bg-blue-500', textColor: 'text-blue-600', dotColor: 'bg-blue-500' },
+                            { label: 'Dinas Luar', count: employeeStats.business_trip, color: 'bg-teal-500', textColor: 'text-teal-600', dotColor: 'bg-teal-500' },
+                        ];
+                        return (
+                            <>
+                                {/* Stacked horizontal bar */}
+                                <div className="flex h-4 rounded-full overflow-hidden bg-gray-100 mb-4">
+                                    {segments.map((seg) => (
+                                        seg.count > 0 && (
+                                            <div
+                                                key={seg.label}
+                                                className={`${seg.color} transition-all duration-500 ease-out relative group`}
+                                                style={{ width: `${(seg.count / total) * 100}%`, minWidth: seg.count > 0 ? '8px' : '0' }}
+                                                title={`${seg.label}: ${seg.count}`}
+                                            >
+                                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                    {seg.label}: {seg.count}
+                                                </div>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                                {/* Legend */}
+                                <div className="flex flex-wrap gap-x-5 gap-y-2">
+                                    {segments.map((seg) => (
+                                        <div key={seg.label} className="flex items-center gap-1.5">
+                                            <span className={`w-2.5 h-2.5 rounded-full ${seg.dotColor}`} />
+                                            <span className="text-xs text-gray-600">{seg.label}</span>
+                                            <span className={`text-xs font-bold ${seg.textColor}`}>{seg.count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        );
+                    })()}
                 </div>
 
                 {/* Quick Action Buttons */}
@@ -294,7 +346,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                     <th className="px-4 py-3 text-left text-xs font-medium">Divisi</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Jabatan</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium">Cabang</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium">Aksi</th>
+                                    <th className="px-4 py-3 text-center text-xs font-medium">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -351,7 +403,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                 {emp.department?.name || '-'}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="flex items-center justify-end gap-1">
+                                                <div className="flex items-center justify-center gap-1">
                                                     <Link
                                                         href={`/employees/${emp.id}`}
                                                         className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -363,7 +415,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                         </svg>
                                                     </Link>
                                                     <Link
-                                                        href={`/employees/${emp.id}/edit`}
+                                                        href={`/employees/${emp.id}?editing=1`}
                                                         className="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
                                                         title="Edit"
                                                     >
@@ -392,7 +444,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 </svg>
                                                 <p className="text-gray-500 text-sm mb-1">Belum ada data karyawan</p>
-                                                 <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Add employee →</Link>
+                                                 <Link href="/employees/create" className="text-blue-600 text-sm hover:underline">Tambah employee →</Link>
                                              </div>
                                          </td>
                                      </tr>
@@ -401,17 +453,36 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Pagination + Per-page selector */}
                     {employees.links && (
                         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-                            <p className="text-sm text-gray-500">
-                                Menampilkan {employees.from || 0} sampai {employees.to || 0} dari {employees.total || 0}
-                            </p>
+                            <div className="flex items-center gap-3">
+                                <p className="text-sm text-gray-500">
+                                    Menampilkan {employees.from || 0} sampai {employees.to || 0} dari {employees.total || 0}
+                                </p>
+                                <div className="flex items-center gap-1.5">
+                                    <label className="text-xs text-gray-500">Per halaman:</label>
+                                    <select
+                                        value={perPage}
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value);
+                                            setPerPage(val);
+                                            applyFilters({ per_page: val });
+                                        }}
+                                        className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-gray-50 focus:ring-1 focus:ring-blue-500"
+                                    >
+                                        <option value={10}>10</option>
+                                        <option value={20}>20</option>
+                                        <option value={50}>50</option>
+                                        <option value={100}>100</option>
+                                    </select>
+                                </div>
+                            </div>
                             <div className="flex gap-1">
                                 {employees.links?.map((link, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => link.url && router.get(link.url, { search, status, branch, division })}
+                                        onClick={() => link.url && router.get(link.url, { search, status, branch, division, per_page: perPage })}
                                         disabled={!link.url}
                                         className={`px-3 py-1 text-sm rounded-lg transition-colors ${link.active
                                             ? 'bg-slate-900 text-white'
@@ -427,37 +498,6 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                     )}
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-gray-900">{employeeStats.total}</p>
-                        <p className="text-xs text-gray-500 mt-1">Total</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-green-600">{employeeStats.active}</p>
-                        <p className="text-xs text-gray-500 mt-1">Aktif</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-red-600">{employeeStats.terminated}</p>
-                        <p className="text-xs text-gray-500 mt-1">Terminated</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-amber-600">{employeeStats.permission}</p>
-                        <p className="text-xs text-gray-500 mt-1">Izin</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-blue-600">{employeeStats.probation}</p>
-                        <p className="text-xs text-gray-500 mt-1">Masa Percobaan</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-yellow-600">{employeeStats.on_leave}</p>
-                        <p className="text-xs text-gray-500 mt-1">Cuti</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-200 text-center p-4">
-                        <p className="text-xl font-bold text-teal-600">{employeeStats.business_trip}</p>
-                        <p className="text-xs text-gray-500 mt-1">Dinas Luar</p>
-                    </div>
-                </div>
 
                 {hasActiveFilters && (
                     <p className="text-xs text-gray-400 text-center">

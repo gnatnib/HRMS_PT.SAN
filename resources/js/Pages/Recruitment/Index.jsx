@@ -8,6 +8,7 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
     const [draggedCandidate, setDraggedCandidate] = useState(null);
     const [draggedFromStage, setDraggedFromStage] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [localCandidates, setLocalCandidates] = useState(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
@@ -33,7 +34,7 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
         hired: 'bg-green-50 border-green-300',
     };
 
-    const demoCandidates = Object.keys(candidates).length > 0 ? candidates : {
+    const baseCandidates = Object.keys(candidates).length > 0 ? candidates : {
         applied: [
             { id: 1, name: 'John Doe', position: 'Software Engineer', source: 'LinkedIn', date: '2024-01-18' },
             { id: 2, name: 'Jane Smith', position: 'UI/UX Designer', source: 'Jobstreet', date: '2024-01-17' },
@@ -52,6 +53,9 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
             { id: 7, name: 'Robert Wilson', position: 'DevOps Engineer', source: 'LinkedIn', date: '2023-12-20' },
         ],
     };
+
+    // Use localCandidates for optimistic UI, fall back to server data
+    const demoCandidates = localCandidates || baseCandidates;
 
     const demoPositions = positions.length > 0 ? positions : [
         { id: 1, title: 'Software Engineer', department: 'IT', applicants: 8, urgency: 'high' },
@@ -73,10 +77,34 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
     const handleDrop = (e, toStage) => {
         e.preventDefault();
         if (draggedCandidate && draggedFromStage !== toStage) {
+            // Optimistic update: move candidate in local state immediately
+            const updated = {};
+            stages.forEach((s) => {
+                updated[s] = [...(demoCandidates[s] || [])];
+            });
+            updated[draggedFromStage] = updated[draggedFromStage].filter(
+                (c) => c.id !== draggedCandidate.id
+            );
+            updated[toStage] = [...updated[toStage], draggedCandidate];
+            setLocalCandidates(updated);
+
+            // Send to server silently (no loading bar)
             router.post('/recruitment/move', {
                 candidate_id: draggedCandidate.id,
                 from_stage: draggedFromStage,
                 to_stage: toStage,
+            }, {
+                preserveScroll: true,
+                preserveState: true,
+                showProgress: false,
+                onSuccess: () => {
+                    // Reset local state, let server data take over
+                    setLocalCandidates(null);
+                },
+                onError: () => {
+                    // Revert on error
+                    setLocalCandidates(null);
+                },
             });
         }
         setDraggedCandidate(null);
@@ -125,11 +153,7 @@ export default function RecruitmentIndex({ auth, candidates = {}, stats = {}, po
             <Head title="Recruitment - ATS" />
 
             <div className="space-y-6">
-                {flash?.success && (
-                    <div className="p-4 bg-green-100 border border-green-300 text-green-700 rounded-lg">
-                        ✓ {flash.success}
-                    </div>
-                )}
+
 
                 <div className="flex items-center justify-between">
                     <div>

@@ -84,7 +84,7 @@ export default function Dashboard({
 
                         {/* Shortcut Buttons */}
                         <div className="flex flex-wrap items-center gap-3 mt-4">
-                            <span className="text-sm font-medium text-gray-500">Shortcuts</span>
+                            <span className="text-sm font-medium text-gray-500">Pintasan</span>
                             <Link href="/employees/create" className="shortcut-btn">Add Employee</Link>
                             <Link href="/employees" className="shortcut-btn">Employee List</Link>
                             <Link href="/employees-export" className="shortcut-btn">Export Data</Link>
@@ -151,12 +151,6 @@ export default function Dashboard({
                                         </svg>
                                         Recruitment
                                     </Link>
-                                    <Link href="/recruitment/onboarding" className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                                        </svg>
-                                        Onboarding
-                                    </Link>
                                 </nav>
                             </div>
 
@@ -170,7 +164,7 @@ export default function Dashboard({
                                     </div>
                                     <div className="bg-green-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-green-600">{newHiresThisMonth || 0}</p>
-                                        <p className="text-xs text-green-700">New This Month</p>
+                                        <p className="text-xs text-green-700">Baru Bulan Ini</p>
                                     </div>
                                     <div className="bg-blue-50 rounded-lg p-3 text-center">
                                         <p className="text-xl font-bold text-blue-600">
@@ -204,8 +198,8 @@ export default function Dashboard({
                         <div className="widget-card">
                             <div className="mb-4 flex items-center justify-between gap-3">
                                 <div>
-                                    <h3 className="text-sm font-semibold text-gray-900">Announcement</h3>
-                                    <p className="mt-1 text-xs text-gray-500">This announcement is visible to all logged-in users.</p>
+                                    <h3 className="text-sm font-semibold text-gray-900">Pengumuman</h3>
+                                    <p className="mt-1 text-xs text-gray-500">Pengumuman ini tampil untuk seluruh user yang login.</p>
                                 </div>
                                 <button
                                     type="button"
@@ -213,7 +207,7 @@ export default function Dashboard({
                                     className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-800"
                                 >
                                     <span>+</span>
-                                    Add Announcement
+                                    Tambah Pengumuman
                                 </button>
                             </div>
                             {announcements && announcements.length > 0 ? (
@@ -248,8 +242,8 @@ export default function Dashboard({
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
                                         </svg>
                                     </div>
-                                    <p className="text-gray-500 text-sm font-medium">No announcements yet</p>
-                                    <p className="text-xs text-gray-400 mt-1">New announcements will appear here</p>
+                                    <p className="text-gray-500 text-sm font-medium">Belum ada pengumuman</p>
+                                    <p className="text-xs text-gray-400 mt-1">Pengumuman baru akan muncul di sini</p>
                                 </div>
                             )}
                         </div>
@@ -260,8 +254,8 @@ export default function Dashboard({
                         {/* Recently Added */}
                         <div className="widget-card">
                             <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-sm font-semibold text-gray-900">Recently Added</h3>
-                                <Link href="/employees" className="text-xs text-blue-600 hover:text-blue-800">View all →</Link>
+                                <h3 className="text-sm font-semibold text-gray-900">Baru Ditambahkan</h3>
+                                <Link href="/employees" className="text-xs text-blue-600 hover:text-blue-800">Lihat semua →</Link>
                             </div>
                             <div className="space-y-2">
                                 {recentEmployees?.length > 0 ? recentEmployees.map((emp) => (
@@ -273,12 +267,21 @@ export default function Dashboard({
                                             <p className="text-sm font-medium text-gray-900 truncate">{emp.first_name} {emp.last_name || ''}</p>
                                             <p className="text-xs text-gray-500 truncate">{emp.position?.name || emp.employee_code || '-'}</p>
                                         </div>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${emp.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                            {emp.is_active ? 'Active' : 'Inactive'}
+                                        <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                            {
+                                                'Aktif': 'bg-green-100 text-green-700',
+                                                'Terminated': 'bg-red-100 text-red-700',
+                                                'Izin': 'bg-amber-100 text-amber-700',
+                                                'Cuti': 'bg-yellow-100 text-yellow-700',
+                                                'Dinas Luar': 'bg-teal-100 text-teal-700',
+                                                'Masa Percobaan': 'bg-blue-100 text-blue-700',
+                                            }[emp.employment_status] || (emp.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')
+                                        }`}>
+                                            {emp.employment_status || (emp.is_active ? 'Aktif' : 'Terminated')}
                                         </span>
                                     </Link>
                                 )) : (
-                                    <p className="text-sm text-gray-400 text-center py-4">No employees yet</p>
+                                    <p className="text-sm text-gray-400 text-center py-4">Belum ada data employee</p>
                                 )}
                             </div>
                         </div>
@@ -302,7 +305,7 @@ export default function Dashboard({
                                         </div>
                                     </div>
                                 )) : (
-                                    <p className="text-sm text-gray-400 text-center py-4">Everyone is available today 🎉</p>
+                                    <p className="text-sm text-gray-400 text-center py-4">Semua employee hadir hari ini 🎉</p>
                                 )}
                             </div>
                         </div>
@@ -447,7 +450,7 @@ function EmploymentStatusCard({ data }) {
     return (
         <div className="stats-card">
             <div className="stats-card-title">
-                <span>Employment Status</span>
+                <span>Status Karyawan</span>
                 <button className="text-gray-400 hover:text-gray-600">⋮</button>
             </div>
 

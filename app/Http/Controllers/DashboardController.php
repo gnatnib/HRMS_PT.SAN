@@ -35,7 +35,7 @@ class DashboardController extends Controller
 
         // Recent Employees (last 5 added)
         $recentEmployees = Employee::with('position:id,name')
-            ->select('id', 'first_name', 'last_name', 'employee_code', 'is_active', 'position_id', 'created_at')
+            ->select('id', 'first_name', 'last_name', 'employee_code', 'is_active', 'employment_status', 'position_id', 'created_at')
             ->latest()
             ->take(5)
             ->get();
@@ -65,11 +65,11 @@ class DashboardController extends Controller
     {
         $hour = Carbon::now()->hour;
         if ($hour < 12) {
-            return 'Good morning';
+            return 'Selamat pagi';
         } elseif ($hour < 17) {
-            return 'Good afternoon';
+            return 'Selamat siang';
         } else {
-            return 'Good evening';
+            return 'Selamat sore';
         }
     }
 

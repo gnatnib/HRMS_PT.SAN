@@ -35,12 +35,16 @@ class User extends Authenticatable
         'email_verified_at',
         'password',
         'profile_photo_path',
+        'is_active',
     ];
 
     protected $hidden = ['password', 'remember_token', 'two_factor_recovery_codes', 'two_factor_secret'];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'last_login' => 'datetime',
+        'last_activity' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     // Profile photo accessor

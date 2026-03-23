@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Announcement;
+use App\Models\Candidate;
+use App\Models\Contract;
 use App\Models\Employee;
 use App\Models\Position;
 use Carbon\Carbon;
@@ -45,6 +48,32 @@ class DashboardController extends Controller
             ->whereYear('join_date', Carbon::now()->year)
             ->count();
 
+        // Activity Log (recent 10)
+        $recentActivities = ActivityLog::latest()
+            ->take(10)
+            ->get()
+            ->map(fn($log) => [
+                'id' => $log->id,
+                'user_name' => $log->user_name,
+                'action' => $log->action,
+                'module' => $log->module,
+                'description' => $log->description,
+                'time' => $log->created_at->diffForHumans(),
+                'date' => $log->created_at->translatedFormat('d M Y H:i'),
+            ]);
+
+        // Contract Expiry Alert (within 30 days)
+        $contractAlerts = $this->getContractExpiryAlerts();
+
+        // Probation Ending Soon (within 30 days)
+        $probationAlerts = $this->getProbationAlerts();
+
+        // Recruitment Pipeline Summary
+        $recruitmentSummary = $this->getRecruitmentSummary();
+
+        // Birthday This Month
+        $birthdaysThisMonth = $this->getBirthdaysThisMonth();
+
         return Inertia::render('Dashboard', [
             'greeting' => $this->getGreeting(),
             'currentDate' => Carbon::now()->translatedFormat('l, j F'),
@@ -58,6 +87,11 @@ class DashboardController extends Controller
             'recentEmployees' => $recentEmployees,
             'newHiresThisMonth' => $newHiresThisMonth,
             'whosOff' => $whosOff,
+            'recentActivities' => $recentActivities,
+            'contractAlerts' => $contractAlerts,
+            'probationAlerts' => $probationAlerts,
+            'recruitmentSummary' => $recruitmentSummary,
+            'birthdaysThisMonth' => $birthdaysThisMonth,
         ]);
     }
 
@@ -238,7 +272,6 @@ class DashboardController extends Controller
 
     private function getWhosOff(): array
     {
-        // Get employees with leave/sick status
         $offEmployees = Employee::whereIn('employment_status', ['Izin', 'Cuti', 'Dinas Luar'])
             ->select('id', 'first_name', 'last_name', 'employment_status', 'status_reason')
             ->take(5)
@@ -253,5 +286,108 @@ class DashboardController extends Controller
         }
 
         return [];
+    }
+
+    private function getContractExpiryAlerts(): array
+    {
+        try {
+            // Employees with contracts that have work_rate (used as contract duration indicator)
+            // Get employees whose join_date + contract work_rate is within 30 days
+            $employees = Employee::whereNotNull('contract_id')
+                ->whereNotNull('join_date')
+                ->with(['contract:id,name,work_rate', 'position:id,name'])
+                ->select('id', 'first_name', 'last_name', 'employee_code', 'contract_id', 'join_date', 'position_id')
+                ->get()
+                ->filter(function ($emp) {
+                    if (!$emp->contract || !$emp->contract->work_rate) return false;
+                    $endDate = Carbon::parse($emp->join_date)->addMonths((int)$emp->contract->work_rate);
+                    $daysLeft = Carbon::now()->diffInDays($endDate, false);
+                    return $daysLeft >= 0 && $daysLeft <= 30;
+                })
+                ->take(5)
+                ->map(fn($emp) => [
+                    'id' => $emp->id,
+                    'name' => trim($emp->first_name . ' ' . ($emp->last_name ?? '')),
+                    'employee_code' => $emp->employee_code,
+                    'position' => $emp->position?->name,
+                    'contract' => $emp->contract?->name,
+                    'days_left' => Carbon::now()->diffInDays(Carbon::parse($emp->join_date)->addMonths((int)$emp->contract->work_rate), false),
+                ])
+                ->values()
+                ->toArray();
+
+            return $employees;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    private function getProbationAlerts(): array
+    {
+        // Employees in "Masa Percobaan" status
+        $employees = Employee::where('employment_status', 'Masa Percobaan')
+            ->whereNotNull('join_date')
+            ->with('position:id,name')
+            ->select('id', 'first_name', 'last_name', 'employee_code', 'join_date', 'position_id')
+            ->get()
+            ->map(function ($emp) {
+                // Assume 3-month probation from join_date
+                $probationEnd = Carbon::parse($emp->join_date)->addMonths(3);
+                $daysLeft = Carbon::now()->diffInDays($probationEnd, false);
+                return [
+                    'id' => $emp->id,
+                    'name' => trim($emp->first_name . ' ' . ($emp->last_name ?? '')),
+                    'employee_code' => $emp->employee_code,
+                    'position' => $emp->position?->name,
+                    'join_date' => Carbon::parse($emp->join_date)->translatedFormat('d M Y'),
+                    'probation_end' => $probationEnd->translatedFormat('d M Y'),
+                    'days_left' => max(0, $daysLeft),
+                ];
+            })
+            ->sortBy('days_left')
+            ->take(5)
+            ->values()
+            ->toArray();
+
+        return $employees;
+    }
+
+    private function getRecruitmentSummary(): array
+    {
+        try {
+            $stages = ['applied', 'screening', 'interview', 'offering', 'hired', 'rejected'];
+            $summary = [];
+            foreach ($stages as $stage) {
+                $summary[$stage] = Candidate::where('stage', $stage)->count();
+            }
+            $summary['total'] = array_sum($summary);
+            return $summary;
+        } catch (\Exception $e) {
+            return ['total' => 0, 'applied' => 0, 'screening' => 0, 'interview' => 0, 'offering' => 0, 'hired' => 0, 'rejected' => 0];
+        }
+    }
+
+    private function getBirthdaysThisMonth(): array
+    {
+        try {
+            $currentMonth = Carbon::now()->month;
+            return Employee::whereMonth('birth_date', $currentMonth)
+                ->where('is_active', true)
+                ->with('position:id,name')
+                ->select('id', 'first_name', 'last_name', 'birth_date', 'position_id', 'profile_photo_path')
+                ->get()
+                ->map(fn($emp) => [
+                    'id' => $emp->id,
+                    'name' => trim($emp->first_name . ' ' . ($emp->last_name ?? '')),
+                    'birth_date' => Carbon::parse($emp->birth_date)->translatedFormat('d F'),
+                    'position' => $emp->position?->name,
+                    'is_today' => Carbon::parse($emp->birth_date)->isBirthday(),
+                ])
+                ->sortBy(fn($emp) => Carbon::parse($emp['birth_date'])->day)
+                ->values()
+                ->toArray();
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

@@ -1,4 +1,4 @@
-import { Head, router, Link, usePage } from '@inertiajs/react';
+import { Head, router, Link, usePage, useForm } from '@inertiajs/react';
 import MekariLayout from '@/Layouts/MekariLayout';
 import { useState, useEffect } from 'react';
 
@@ -8,8 +8,13 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
     const [status, setStatus] = useState(filters.status || '');
     const [branch, setBranch] = useState(filters.branch || '');
     const [division, setDivision] = useState(filters.division || '');
+    const [joinFrom, setJoinFrom] = useState(filters.join_from || '');
+    const [joinTo, setJoinTo] = useState(filters.join_to || '');
     const [perPage, setPerPage] = useState(filters.per_page || 20);
     const [selectedIds, setSelectedIds] = useState([]);
+    const [showImportModal, setShowImportModal] = useState(false);
+
+    const importForm = useForm({ csv_file: null });
 
     const employeeList = employees.data || [];
 
@@ -23,7 +28,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
         business_trip: stats.business_trip || 0,
     };
 
-    const hasActiveFilters = status || branch || division;
+    const hasActiveFilters = status || branch || division || joinFrom || joinTo;
 
     // Checkbox logic
     const allSelected = employeeList.length > 0 && employeeList.every(emp => selectedIds.includes(emp.id));
@@ -54,6 +59,8 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
             status: overrides.status ?? status,
             branch: overrides.branch ?? branch,
             division: overrides.division ?? division,
+            join_from: overrides.join_from ?? joinFrom,
+            join_to: overrides.join_to ?? joinTo,
             per_page: overrides.per_page ?? perPage,
         };
         // Remove empty params
@@ -92,6 +99,8 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
         if (status) params.set('status', status);
         if (branch) params.set('branch', branch);
         if (division) params.set('division', division);
+        if (joinFrom) params.set('join_from', joinFrom);
+        if (joinTo) params.set('join_to', joinTo);
         const queryString = params.toString();
         window.location.href = '/employees-export' + (queryString ? '?' + queryString : '');
     };
@@ -101,7 +110,17 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
         setStatus('');
         setBranch('');
         setDivision('');
+        setJoinFrom('');
+        setJoinTo('');
         router.get('/employees', {}, { preserveState: true });
+    };
+
+    const handleImportCsv = (e) => {
+        e.preventDefault();
+        importForm.post('/employees-import-csv', {
+            forceFormData: true,
+            onSuccess: () => { setShowImportModal(false); importForm.reset(); },
+        });
     };
 
     return (
@@ -181,7 +200,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                 </div>
 
                 {/* Quick Action Buttons */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-5 gap-3">
                     <Link
                         href="/employees/create"
                         className="flex flex-col items-center justify-center p-5 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all group"
@@ -205,6 +224,17 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                         <span className="text-xs font-medium text-gray-700 group-hover:text-purple-600">BULK ADD EMPLOYEE</span>
                     </Link>
                     <button
+                        onClick={() => setShowImportModal(true)}
+                        className="flex flex-col items-center justify-center p-5 bg-white border border-gray-200 rounded-xl hover:border-orange-300 hover:shadow-md transition-all group"
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center mb-2 group-hover:bg-orange-100 transition-colors">
+                            <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-orange-600">IMPORT CSV</span>
+                    </button>
+                    <button
                         onClick={handleExport}
                         className="flex flex-col items-center justify-center p-5 bg-white border border-gray-200 rounded-xl hover:border-green-300 hover:shadow-md transition-all group"
                     >
@@ -217,6 +247,17 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                             EXPORT CSV {hasActiveFilters ? '(FILTER)' : 'ALL'}
                         </span>
                     </button>
+                    <Link
+                        href="/employees-trashed"
+                        className="flex flex-col items-center justify-center p-5 bg-white border border-gray-200 rounded-xl hover:border-red-300 hover:shadow-md transition-all group"
+                    >
+                        <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center mb-2 group-hover:bg-red-100 transition-colors">
+                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </div>
+                        <span className="text-xs font-medium text-gray-700 group-hover:text-red-600">TRASHED</span>
+                    </Link>
                 </div>
 
                 {/* Filters */}
@@ -237,7 +278,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                             </button>
                         )}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <label className="block text-xs text-gray-500 mb-1 font-medium">Status</label>
                             <select
@@ -279,6 +320,26 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1 font-medium">Tanggal Masuk Dari</label>
+                            <input
+                                type="date"
+                                value={joinFrom}
+                                onChange={(e) => { setJoinFrom(e.target.value); applyFilters({ join_from: e.target.value }); }}
+                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1 font-medium">Tanggal Masuk Sampai</label>
+                            <input
+                                type="date"
+                                value={joinTo}
+                                onChange={(e) => { setJoinTo(e.target.value); applyFilters({ join_to: e.target.value }); }}
+                                className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                            />
                         </div>
                         <div>
                             <label className="block text-xs text-gray-500 mb-1 font-medium">Cari</label>
@@ -482,7 +543,7 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                                 {employees.links?.map((link, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => link.url && router.get(link.url, { search, status, branch, division, per_page: perPage })}
+                                        onClick={() => link.url && router.get(link.url, { search, status, branch, division, join_from: joinFrom, join_to: joinTo, per_page: perPage })}
                                         disabled={!link.url}
                                         className={`px-3 py-1 text-sm rounded-lg transition-colors ${link.active
                                             ? 'bg-slate-900 text-white'
@@ -505,6 +566,55 @@ export default function EmployeesIndex({ employees = {}, departments = [], cente
                     </p>
                 )}
             </div>
+
+            {/* Import CSV Modal */}
+            {showImportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="px-6 py-4 border-b">
+                            <h3 className="text-lg font-semibold text-gray-900">Import Employee dari CSV</h3>
+                            <p className="text-sm text-gray-500 mt-1">Upload file CSV untuk menambah data karyawan secara bulk</p>
+                        </div>
+
+                        <form onSubmit={handleImportCsv} className="px-6 py-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">File CSV</label>
+                                <input
+                                    type="file"
+                                    accept=".csv,.txt"
+                                    onChange={(e) => importForm.setData('csv_file', e.target.files[0])}
+                                    className="form-input w-full text-sm"
+                                    required
+                                />
+                                {importForm.errors.csv_file && <p className="text-sm text-red-600 mt-1">{importForm.errors.csv_file}</p>}
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
+                                <p className="font-medium text-gray-700">Format kolom yang didukung:</p>
+                                <p>first_name (nama_depan), last_name (nama_belakang), email, mobile_number (no_hp), employee_code (kode_karyawan), gender, birth_date (tanggal_lahir), birth_place (tempat_lahir), address (alamat), join_date (tanggal_masuk)</p>
+                                <p className="mt-1">Delimiter: koma (,) atau titik koma (;)</p>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowImportModal(false); importForm.reset(); }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={importForm.processing}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50"
+                                >
+                                    {importForm.processing ? 'Mengimport...' : 'Import'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </MekariLayout>
     );
 }

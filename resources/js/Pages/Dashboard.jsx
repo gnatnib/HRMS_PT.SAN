@@ -20,6 +20,11 @@ export default function Dashboard({
     recentEmployees,
     newHiresThisMonth,
     whosOff,
+    recentActivities = [],
+    contractAlerts = [],
+    probationAlerts = [],
+    recruitmentSummary = {},
+    birthdaysThisMonth = [],
 }) {
     const { auth, flash } = usePage().props;
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
@@ -305,10 +310,154 @@ export default function Dashboard({
                                         </div>
                                     </div>
                                 )) : (
-                                    <p className="text-sm text-gray-400 text-center py-4">Semua employee hadir hari ini 🎉</p>
+                                    <p className="text-sm text-gray-400 text-center py-4">Semua employee hadir hari ini</p>
                                 )}
                             </div>
                         </div>
+
+                        {/* Birthday This Month */}
+                        <div className="widget-card">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-sm font-semibold text-gray-900">Ulang Tahun Bulan Ini</h3>
+                                <span className="text-xs text-gray-400">{birthdaysThisMonth.length} orang</span>
+                            </div>
+                            <div className="space-y-2">
+                                {birthdaysThisMonth.length > 0 ? birthdaysThisMonth.map((person, index) => (
+                                    <div key={index} className={`flex items-center gap-3 p-2 -mx-2 rounded-lg ${person.is_today ? 'bg-yellow-50 border border-yellow-200' : ''}`}>
+                                        <div className={`flex items-center justify-center w-8 h-8 text-xs font-medium text-white rounded-full flex-shrink-0 ${person.is_today ? 'bg-yellow-500' : 'bg-gray-400'}`}>
+                                            {person.name.charAt(0)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                {person.name}
+                                                {person.is_today && <span className="ml-1 text-yellow-600 text-xs font-semibold">- Hari ini!</span>}
+                                            </p>
+                                            <p className="text-xs text-gray-500">{person.birth_date} {person.position ? `- ${person.position}` : ''}</p>
+                                        </div>
+                                    </div>
+                                )) : (
+                                    <p className="text-sm text-gray-400 text-center py-4">Tidak ada ulang tahun bulan ini</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Recruitment Pipeline */}
+                        {recruitmentSummary.total > 0 && (
+                            <div className="widget-card">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-semibold text-gray-900">Recruitment Pipeline</h3>
+                                    <Link href="/recruitment" className="text-xs text-blue-600 hover:text-blue-800">Lihat detail →</Link>
+                                </div>
+                                <div className="space-y-2">
+                                    {[
+                                        { key: 'applied', label: 'Applied', color: 'bg-gray-200 text-gray-700' },
+                                        { key: 'screening', label: 'Screening', color: 'bg-blue-100 text-blue-700' },
+                                        { key: 'interview', label: 'Interview', color: 'bg-purple-100 text-purple-700' },
+                                        { key: 'offering', label: 'Offering', color: 'bg-amber-100 text-amber-700' },
+                                        { key: 'hired', label: 'Hired', color: 'bg-green-100 text-green-700' },
+                                        { key: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-700' },
+                                    ].map((stage) => (
+                                        <div key={stage.key} className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">{stage.label}</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${stage.color}`}>
+                                                {recruitmentSummary[stage.key] || 0}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Bottom Row — Alerts & Activity */}
+                <div className="grid gap-6 mt-6 lg:grid-cols-3">
+                    {/* Activity Log */}
+                    <div className="widget-card lg:col-span-2">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-semibold text-gray-900">Aktivitas Terbaru</h3>
+                        </div>
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                            {recentActivities.length > 0 ? recentActivities.map((activity) => (
+                                <div key={activity.id} className="flex items-start gap-3 text-sm">
+                                    <div className={`flex-shrink-0 w-2 h-2 mt-1.5 rounded-full ${
+                                        activity.action === 'created' ? 'bg-green-500' :
+                                        activity.action === 'deleted' ? 'bg-red-500' :
+                                        activity.action === 'status_changed' ? 'bg-amber-500' :
+                                        'bg-blue-500'
+                                    }`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-gray-700">{activity.description}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{activity.user_name} - {activity.time}</p>
+                                    </div>
+                                    <span className={`flex-shrink-0 px-2 py-0.5 text-xs rounded-full ${
+                                        activity.module === 'employee' ? 'bg-blue-50 text-blue-600' :
+                                        activity.module === 'recruitment' ? 'bg-purple-50 text-purple-600' :
+                                        'bg-gray-100 text-gray-600'
+                                    }`}>{activity.module}</span>
+                                </div>
+                            )) : (
+                                <p className="text-sm text-gray-400 text-center py-4">Belum ada aktivitas tercatat</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Alerts Column */}
+                    <div className="space-y-4">
+                        {/* Contract Expiry */}
+                        {contractAlerts.length > 0 && (
+                            <div className="widget-card border-l-4 border-l-orange-400">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-2">Kontrak Segera Habis</h3>
+                                <div className="space-y-2">
+                                    {contractAlerts.map((alert) => (
+                                        <Link key={alert.id} href={`/employees/${alert.id}`} className="flex items-center justify-between text-sm hover:bg-gray-50 rounded p-1 -mx-1 transition-colors">
+                                            <div>
+                                                <p className="font-medium text-gray-900">{alert.name}</p>
+                                                <p className="text-xs text-gray-500">{alert.contract}</p>
+                                            </div>
+                                            <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                                                {alert.days_left} hari
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Probation Ending */}
+                        {probationAlerts.length > 0 && (
+                            <div className="widget-card border-l-4 border-l-blue-400">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-2">Masa Percobaan</h3>
+                                <div className="space-y-2">
+                                    {probationAlerts.map((alert) => (
+                                        <Link key={alert.id} href={`/employees/${alert.id}`} className="flex items-center justify-between text-sm hover:bg-gray-50 rounded p-1 -mx-1 transition-colors">
+                                            <div>
+                                                <p className="font-medium text-gray-900">{alert.name}</p>
+                                                <p className="text-xs text-gray-500">Berakhir: {alert.probation_end}</p>
+                                            </div>
+                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                                alert.days_left <= 7 ? 'text-red-600 bg-red-50' : 'text-blue-600 bg-blue-50'
+                                            }`}>
+                                                {alert.days_left} hari
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {contractAlerts.length === 0 && probationAlerts.length === 0 && (
+                            <div className="widget-card">
+                                <div className="text-center py-4">
+                                    <div className="w-10 h-10 mx-auto mb-2 flex items-center justify-center rounded-full bg-green-100">
+                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-sm text-gray-500">Tidak ada alert saat ini</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

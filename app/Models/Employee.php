@@ -178,6 +178,16 @@ class Employee extends Model
         return $this->hasMany(Transition::class);
     }
 
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(EmployeeStatusHistory::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EmployeeDocument::class);
+    }
+
     // 👉 Attributes
     protected function hourlyCounter(): Attribute
     {

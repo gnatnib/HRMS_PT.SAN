@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Employee;
+use App\Models\EmployeeDocument;
+use App\Models\EmployeeStatusHistory;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\Center;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 
@@ -19,6 +23,8 @@ class EmployeeController extends Controller
         $status = $request->get('status');
         $branch = $request->get('branch');
         $division = $request->get('division');
+        $joinFrom = $request->get('join_from');
+        $joinTo = $request->get('join_to');
         $perPage = min((int) ($request->get('per_page', 20)), 100);
         if ($perPage < 1) $perPage = 20;
 
@@ -57,6 +63,14 @@ class EmployeeController extends Controller
         // Division filter (centers table stores divisions)
         if ($division !== null && $division !== '') {
             $query->where('center_id', $division);
+        }
+
+        // Join date range filter
+        if ($joinFrom) {
+            $query->where('join_date', '>=', $joinFrom);
+        }
+        if ($joinTo) {
+            $query->where('join_date', '<=', $joinTo);
         }
 
         $employees = $query->orderBy('first_name')->paginate($perPage);
@@ -111,6 +125,8 @@ class EmployeeController extends Controller
                 'status' => $status,
                 'branch' => $branch,
                 'division' => $division,
+                'join_from' => $joinFrom,
+                'join_to' => $joinTo,
                 'per_page' => $perPage,
             ],
         ]);
@@ -149,7 +165,7 @@ class EmployeeController extends Controller
             'address' => 'nullable|string|max:500',
 
             // Employment Data
-            'employee_code' => 'nullable|string|max:20',
+            'employee_code' => 'nullable|string|max:20|unique:employees,employee_code',
             'barcode' => 'nullable|string|max:50',
             'center_id' => 'nullable|exists:centers,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -284,7 +300,18 @@ class EmployeeController extends Controller
             $validated['employee_code'] = 'EMP-' . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
         }
 
-        Employee::create($validated);
+        $employee = Employee::create($validated);
+
+        // Log status history for new employee
+        EmployeeStatusHistory::create([
+            'employee_id' => $employee->id,
+            'from_status' => null,
+            'to_status' => $employee->employment_status ?? 'Aktif',
+            'reason' => 'Karyawan baru ditambahkan',
+            'changed_by' => auth()->user()?->name ?? 'System',
+        ]);
+
+        ActivityLog::log('created', 'employee', "Menambahkan karyawan: {$employee->first_name} {$employee->last_name} ({$employee->employee_code})", $employee);
 
         return redirect()->route('employees.index')->with('success', 'Karyawan berhasil ditambahkan!');
     }
@@ -292,9 +319,11 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         $employee->load([
-            'timelines' => fn($q) => $q->with(['center', 'department', 'position'])->latest()->limit(1),
+            'timelines' => fn($q) => $q->with(['center', 'department', 'position'])->latest(),
             'fingerprints' => fn($q) => $q->orderByDesc('date')->limit(10),
             'leaves' => fn($q) => $q->withPivot('from_date', 'to_date', 'is_authorized', 'note')->limit(10),
+            'documents' => fn($q) => $q->latest(),
+            'statusHistories' => fn($q) => $q->latest()->limit(20),
         ]);
 
         // Get latest timeline for current assignment
@@ -310,6 +339,7 @@ class EmployeeController extends Controller
             'departments' => $departments,
             'positions' => $positions,
             'centers' => $centers,
+            'documentTypes' => \App\Models\EmployeeDocument::TYPES,
         ]);
     }
 
@@ -341,7 +371,7 @@ class EmployeeController extends Controller
             'postal_code' => 'nullable|string|max:10',
             'degree' => 'nullable|string|max:100',
             // Employment
-            'employee_code' => 'nullable|string|max:20',
+            'employee_code' => ['nullable', 'string', 'max:20', Rule::unique('employees', 'employee_code')->ignore($employee->id)],
             'barcode' => 'nullable|string|max:50',
             'contract_id' => 'nullable|exists:contracts,id',
             'position_id' => 'nullable|exists:positions,id',
@@ -429,6 +459,9 @@ class EmployeeController extends Controller
             $validated['gender'] = $validated['gender'] === 'male' ? 1 : 0;
         }
 
+        // Track status change before update
+        $oldStatus = $employee->employment_status;
+
         // Handle employee_status -> is_active + employment_status mapping
         if (isset($validated['employee_status'])) {
             $mapped = $this->resolveEmployeeStatus($validated['employee_status']);
@@ -445,18 +478,37 @@ class EmployeeController extends Controller
 
         $employee->update($validated);
 
+        // Log status change if different
+        $newStatus = $employee->employment_status;
+        if ($oldStatus !== $newStatus) {
+            EmployeeStatusHistory::create([
+                'employee_id' => $employee->id,
+                'from_status' => $oldStatus,
+                'to_status' => $newStatus,
+                'reason' => $validated['status_reason'] ?? null,
+                'notes' => $validated['status_notes'] ?? null,
+                'changed_by' => auth()->user()?->name ?? 'System',
+            ]);
+
+            ActivityLog::log('status_changed', 'employee', "Status {$employee->first_name} {$employee->last_name} berubah: {$oldStatus} → {$newStatus}", $employee, [
+                'from' => $oldStatus,
+                'to' => $newStatus,
+            ]);
+        } else {
+            ActivityLog::log('updated', 'employee', "Update data karyawan: {$employee->first_name} {$employee->last_name}", $employee);
+        }
+
         return redirect()->route('employees.show', $employee)->with('success', 'Data karyawan berhasil diupdate!');
     }
 
     public function destroy(Employee $employee)
     {
-        if ($employee->profile_photo_path) {
-            Storage::disk('public')->delete($employee->profile_photo_path);
-        }
+        ActivityLog::log('deleted', 'employee', "Menghapus karyawan: {$employee->first_name} {$employee->last_name} ({$employee->employee_code})", $employee);
 
+        // Soft delete - don't remove photo
         $employee->delete();
 
-        return redirect()->route('employees.index')->with('success', 'Karyawan berhasil dihapus!');
+        return redirect()->route('employees.index')->with('success', 'Karyawan berhasil dihapus (dapat dipulihkan).');
     }
 
     public function export(Request $request)
@@ -670,6 +722,189 @@ class EmployeeController extends Controller
             ]);
 
         return response()->json($employees);
+    }
+
+    public function importCsv(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('file');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        // Read BOM if present
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        // Read header
+        $header = fgetcsv($handle, 0, ';');
+        if (!$header) {
+            $header = fgetcsv($handle, 0, ',');
+            rewind($handle);
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                rewind($handle);
+            }
+            $header = fgetcsv($handle, 0, ',');
+            $delimiter = ',';
+        } else {
+            $delimiter = ';';
+        }
+
+        // Normalize headers
+        $header = array_map(fn($h) => strtolower(trim(str_replace(' ', '_', $h))), $header);
+
+        $validDepartments = Department::pluck('id')->toArray();
+        $validCenters = Center::pluck('id')->toArray();
+        $validPositions = Position::pluck('id')->toArray();
+
+        $successCount = 0;
+        $errors = [];
+        $rowNum = 1;
+
+        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $rowNum++;
+            $data = [];
+
+            // Map CSV columns to array
+            foreach ($header as $idx => $col) {
+                $data[$col] = isset($row[$idx]) ? trim($row[$idx]) : null;
+            }
+
+            // Minimum: first_name required
+            $firstName = $data['first_name'] ?? $data['nama_depan'] ?? $data['name'] ?? null;
+            if (empty($firstName)) {
+                $errors[] = "Baris {$rowNum}: Nama depan (first_name) wajib diisi.";
+                continue;
+            }
+
+            try {
+                $lastId = Employee::max('id') ?? 0;
+                $empCode = 'EMP-' . str_pad($lastId + $successCount + 1, 4, '0', STR_PAD_LEFT);
+
+                $empData = [
+                    'first_name' => $firstName,
+                    'last_name' => $data['last_name'] ?? $data['nama_belakang'] ?? null,
+                    'email' => isset($data['email']) && filter_var($data['email'], FILTER_VALIDATE_EMAIL) ? $data['email'] : null,
+                    'mobile_number' => $data['mobile_number'] ?? $data['phone'] ?? $data['no_hp'] ?? null,
+                    'gender' => isset($data['gender']) && in_array(strtolower($data['gender']), ['male', 'female', 'laki-laki', 'perempuan'])
+                        ? (in_array(strtolower($data['gender']), ['male', 'laki-laki']) ? 1 : 0) : null,
+                    'address' => $data['address'] ?? $data['alamat'] ?? null,
+                    'birth_place' => $data['birth_place'] ?? $data['tempat_lahir'] ?? null,
+                    'birth_date' => isset($data['birth_date']) && strtotime($data['birth_date']) ? date('Y-m-d', strtotime($data['birth_date'])) : null,
+                    'national_number' => $data['identity_number'] ?? $data['nik'] ?? $data['national_number'] ?? null,
+                    'employee_code' => $data['employee_code'] ?? $empCode,
+                    'is_active' => true,
+                    'employment_status' => 'Aktif',
+                    'balance_leave_allowed' => 12,
+                ];
+
+                if (!empty($data['department_id']) && in_array((int)$data['department_id'], $validDepartments)) {
+                    $empData['department_id'] = (int)$data['department_id'];
+                }
+                if (!empty($data['center_id']) && in_array((int)$data['center_id'], $validCenters)) {
+                    $empData['center_id'] = (int)$data['center_id'];
+                }
+                if (!empty($data['position_id']) && in_array((int)$data['position_id'], $validPositions)) {
+                    $empData['position_id'] = (int)$data['position_id'];
+                }
+                if (!empty($data['join_date']) && strtotime($data['join_date'])) {
+                    $empData['join_date'] = date('Y-m-d', strtotime($data['join_date']));
+                }
+                if (isset($data['basic_salary']) && is_numeric($data['basic_salary'])) {
+                    $empData['basic_salary'] = (float) $data['basic_salary'];
+                }
+
+                Employee::create($empData);
+                $successCount++;
+            } catch (\Exception $e) {
+                $errors[] = "Baris {$rowNum}: " . $e->getMessage();
+            }
+        }
+
+        fclose($handle);
+
+        ActivityLog::log('created', 'employee', "Import CSV: {$successCount} karyawan berhasil diimpor");
+
+        $message = "{$successCount} karyawan berhasil diimpor.";
+        if (count($errors) > 0) {
+            $message .= " " . count($errors) . " baris gagal.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'imported' => $successCount,
+            'failed' => count($errors),
+            'errors' => $errors,
+            'message' => $message,
+        ]);
+    }
+
+    public function uploadDocument(Request $request, Employee $employee)
+    {
+        $request->validate([
+            'document' => 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240',
+            'name' => 'required|string|max:100',
+            'type' => 'required|string|max:50',
+            'expiry_date' => 'nullable|date',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $file = $request->file('document');
+        $path = $file->store("employees/{$employee->id}/documents", 'public');
+
+        $doc = EmployeeDocument::create([
+            'employee_id' => $employee->id,
+            'name' => $request->input('name'),
+            'type' => $request->input('type'),
+            'file_path' => $path,
+            'file_name' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'expiry_date' => $request->input('expiry_date'),
+            'notes' => $request->input('notes'),
+            'uploaded_by' => auth()->user()?->name ?? 'System',
+        ]);
+
+        ActivityLog::log('created', 'employee', "Upload dokumen '{$doc->name}' untuk {$employee->first_name} {$employee->last_name}", $employee);
+
+        return redirect()->back()->with('success', 'Dokumen berhasil diupload.');
+    }
+
+    public function deleteDocument(EmployeeDocument $document)
+    {
+        Storage::disk('public')->delete($document->file_path);
+
+        ActivityLog::log('deleted', 'employee', "Menghapus dokumen '{$document->name}'");
+
+        $document->delete();
+
+        return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
+    public function trashed()
+    {
+        $employees = Employee::onlyTrashed()
+            ->with(['position:id,name', 'department:id,name', 'center:id,name'])
+            ->select('id', 'employee_code', 'first_name', 'last_name', 'employment_status', 'position_id', 'department_id', 'center_id', 'deleted_at')
+            ->latest('deleted_at')
+            ->paginate(20);
+
+        return Inertia::render('Employees/Trashed', [
+            'employees' => $employees,
+        ]);
+    }
+
+    public function restore(int $id)
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+        $employee->restore();
+
+        ActivityLog::log('updated', 'employee', "Memulihkan karyawan: {$employee->first_name} {$employee->last_name}", $employee);
+
+        return redirect()->back()->with('success', "Karyawan {$employee->first_name} berhasil dipulihkan.");
     }
 
     private function applyEmployeeSearch($query, ?string $search): void

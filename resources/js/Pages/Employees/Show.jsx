@@ -9,6 +9,7 @@ export default function EmployeeShow({
     departments = [],
     positions = [],
     centers = [],
+    documentTypes = [],
     flash
 }) {
     const [activeTab, setActiveTab] = useState('general');
@@ -251,10 +252,47 @@ export default function EmployeeShow({
         setEditableWorkExperience(editableWorkExperience.filter((_, i) => i !== index));
     };
 
-    // Tabs configuration — simplified to General Info only
+    // Document upload state
+    const [uploadDocType, setUploadDocType] = useState('');
+    const [uploadDocName, setUploadDocName] = useState('');
+    const [uploadDocFile, setUploadDocFile] = useState(null);
+    const [uploadDocExpiry, setUploadDocExpiry] = useState('');
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+
+    const handleDocumentUpload = (e) => {
+        e.preventDefault();
+        if (!uploadDocFile) return;
+        setUploadingDoc(true);
+        const formData = new FormData();
+        formData.append('file', uploadDocFile);
+        formData.append('type', uploadDocType);
+        formData.append('name', uploadDocName);
+        if (uploadDocExpiry) formData.append('expiry_date', uploadDocExpiry);
+        router.post(`/employees/${employee.id}/documents`, formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setUploadDocType('');
+                setUploadDocName('');
+                setUploadDocFile(null);
+                setUploadDocExpiry('');
+                setUploadingDoc(false);
+            },
+            onError: () => setUploadingDoc(false),
+        });
+    };
+
+    const handleDeleteDocument = (docId) => {
+        if (confirm('Hapus dokumen ini?')) {
+            router.delete(`/employees/documents/${docId}`, { preserveScroll: true });
+        }
+    };
+
+    // Tabs configuration
     const mainTabs = [
         { id: 'general', name: 'GENERAL INFO', icon: '👤' },
         { id: 'payroll', name: 'PAYROLL INFO', icon: '💰' },
+        { id: 'documents', name: 'DOKUMEN', icon: '📁' },
+        { id: 'statusHistory', name: 'RIWAYAT STATUS', icon: '📋' },
     ];
 
     const generalSubTabs = [
@@ -332,6 +370,10 @@ export default function EmployeeShow({
                 return renderGeneralInfo();
             case 'payroll':
                 return renderPayrollInfo();
+            case 'documents':
+                return renderDocumentsTab();
+            case 'statusHistory':
+                return renderStatusHistoryTab();
             case 'timeoff':
             case 'attendance':
             case 'overtime':
@@ -1143,6 +1185,231 @@ export default function EmployeeShow({
                         </table>
                     </div>
                 </div>
+            </div>
+        );
+    };
+
+    const renderDocumentsTab = () => {
+        const documents = employee.documents || [];
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h2 className="text-2xl font-light text-gray-900 mb-2">Dokumen Karyawan</h2>
+                    <p className="text-sm text-gray-500">Upload dan kelola dokumen penting karyawan seperti KTP, NPWP, ijazah, dll.</p>
+                </div>
+
+                {/* Upload Form */}
+                <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Upload Dokumen Baru</h3>
+                    <form onSubmit={handleDocumentUpload} className="grid md:grid-cols-5 gap-3 items-end">
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Tipe Dokumen</label>
+                            <select
+                                value={uploadDocType}
+                                onChange={(e) => setUploadDocType(e.target.value)}
+                                className="form-input w-full text-sm"
+                                required
+                            >
+                                <option value="">Pilih tipe...</option>
+                                {documentTypes.map((t) => (
+                                    <option key={t} value={t}>{t}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Nama Dokumen</label>
+                            <input
+                                type="text"
+                                value={uploadDocName}
+                                onChange={(e) => setUploadDocName(e.target.value)}
+                                className="form-input w-full text-sm"
+                                placeholder="e.g. KTP Baru 2026"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">Tanggal Kadaluarsa</label>
+                            <input
+                                type="date"
+                                value={uploadDocExpiry}
+                                onChange={(e) => setUploadDocExpiry(e.target.value)}
+                                className="form-input w-full text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-500 mb-1">File</label>
+                            <input
+                                type="file"
+                                onChange={(e) => setUploadDocFile(e.target.files[0])}
+                                className="form-input w-full text-sm"
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                required
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={uploadingDoc}
+                            className="px-4 py-2 text-sm font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 disabled:opacity-50"
+                        >
+                            {uploadingDoc ? 'Uploading...' : 'Upload'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* Documents List */}
+                <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                        <thead>
+                            <tr className="bg-slate-800 text-white">
+                                <th className="px-4 py-3 text-left text-xs font-medium">No</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">Nama</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">Tipe</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">File</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">Ukuran</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">Kadaluarsa</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium">Diupload</th>
+                                <th className="px-4 py-3 text-center text-xs font-medium">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {documents.length > 0 ? documents.map((doc, idx) => (
+                                <tr key={doc.id} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{doc.name}</td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">{doc.type}</span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        <a
+                                            href={`/storage/${doc.file_path}`}
+                                            target="_blank"
+                                            className="text-blue-600 hover:underline text-xs"
+                                        >
+                                            {doc.file_name}
+                                        </a>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-500">
+                                        {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                        {doc.expiry_date ? (
+                                            <span className={new Date(doc.expiry_date) < new Date() ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                                                {formatDate(doc.expiry_date)}
+                                            </span>
+                                        ) : '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-500">
+                                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString('id-ID') : '-'}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                        <button
+                                            onClick={() => handleDeleteDocument(doc.id)}
+                                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Hapus"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan="8" className="px-4 py-8 text-center text-gray-500">
+                                        Belum ada dokumen yang diupload.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        );
+    };
+
+    const renderStatusHistoryTab = () => {
+        const histories = employee.status_histories || [];
+        return (
+            <div className="space-y-6">
+                <div>
+                    <h2 className="text-2xl font-light text-gray-900 mb-2">Riwayat Perubahan Status</h2>
+                    <p className="text-sm text-gray-500">Timeline perubahan status karyawan dari waktu ke waktu.</p>
+                </div>
+
+                {histories.length > 0 ? (
+                    <div className="relative">
+                        {/* Timeline line */}
+                        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+                        <div className="space-y-6">
+                            {histories.map((history, idx) => {
+                                const statusColors = {
+                                    'Aktif': 'bg-green-500',
+                                    'Terminated': 'bg-red-500',
+                                    'Izin': 'bg-amber-500',
+                                    'Cuti': 'bg-yellow-500',
+                                    'Dinas Luar': 'bg-teal-500',
+                                    'Masa Percobaan': 'bg-blue-500',
+                                };
+                                return (
+                                    <div key={history.id || idx} className="relative flex gap-4 pl-2">
+                                        {/* Timeline dot */}
+                                        <div className={`relative z-10 w-3 h-3 mt-1.5 rounded-full ring-4 ring-white ${statusColors[history.to_status] || 'bg-gray-400'}`} />
+
+                                        {/* Content card */}
+                                        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    {history.from_status && (
+                                                        <>
+                                                            <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                                                                {history.from_status}
+                                                            </span>
+                                                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                                            </svg>
+                                                        </>
+                                                    )}
+                                                    <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${
+                                                        {
+                                                            'Aktif': 'bg-green-100 text-green-700',
+                                                            'Terminated': 'bg-red-100 text-red-700',
+                                                            'Izin': 'bg-amber-100 text-amber-700',
+                                                            'Cuti': 'bg-yellow-100 text-yellow-700',
+                                                            'Dinas Luar': 'bg-teal-100 text-teal-700',
+                                                            'Masa Percobaan': 'bg-blue-100 text-blue-700',
+                                                        }[history.to_status] || 'bg-gray-100 text-gray-700'
+                                                    }`}>
+                                                        {history.to_status}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs text-gray-400">
+                                                    {history.created_at ? new Date(history.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                </span>
+                                            </div>
+                                            {history.reason && (
+                                                <p className="text-sm text-gray-700"><span className="font-medium">Alasan:</span> {history.reason}</p>
+                                            )}
+                                            {history.notes && (
+                                                <p className="text-sm text-gray-500 mt-1">{history.notes}</p>
+                                            )}
+                                            {history.changed_by && (
+                                                <p className="text-xs text-gray-400 mt-2">Diubah oleh: {history.changed_by}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center text-gray-500 py-8">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <p className="text-sm">Belum ada riwayat perubahan status.</p>
+                    </div>
+                )}
             </div>
         );
     };

@@ -17,3 +17,5 @@ yarn.lock
 package-lock.json
 /.idea
 SettingsSeeder.php
+.claude/
+.planning/
